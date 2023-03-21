@@ -164,7 +164,7 @@ class SmartManeuverController : public ManeuverControllerBase
 {
 
 private:
-    float pid[3] = {0.8,50, 1}; //kp, ka, kb 3,40, 0
+    float pid[3] = {1,3,0.1}; //kp, ka, kb 3,40, 0
     float d_end_crit = 0.02;
     float d_end_midsteps = 0.08;
     float angle_end_crit = 0.2;
@@ -183,13 +183,13 @@ public:
 
         // printf("alpha: %f\n", alpha);
 
-        // // To avoid weird behaviour at alpha=pi/2, because it is a common case
-        // float margin = 2 * M_PI / 180;
-        // if (fabs(alpha) > M_PI_2 + margin)
-        // {
-        //     alpha = wrap_to_pi(alpha - M_PI);
-        //     vel_sign = -1;
-        // }
+        // To avoid weird behaviour at alpha=pi/2, because it is a common case
+        float margin = 2 * M_PI / 180;
+        if (fabs(alpha) > M_PI_2 + margin)
+        {
+            alpha = wrap_to_pi(alpha - M_PI);
+            vel_sign = -1;
+        }
         float beta = wrap_to_pi(target.theta -(alpha + pose.theta));
         float fwd_vel = vel_sign *  pid[0] * d_fwd;
         float turn_vel = pid[1] * alpha + pid[2] * beta;
@@ -434,7 +434,7 @@ int main(int argc, char** argv)
     while(true)
     {
         lcmInstance.handleTimeout(50);  // update at 20Hz minimum
-        double lSpeedLimit = 0.9;
+        double lSpeedLimit = 0.55;
         
 
     	if(controller.timesync_initialized()){
@@ -445,7 +445,7 @@ int main(int argc, char** argv)
             else if (cmd.trans_v < -lSpeedLimit) cmd.trans_v = -lSpeedLimit;
 
             // Angular vel
-            float max_ang_vel = M_PI * 8 / 3.0;
+            float max_ang_vel = M_PI * 8 / 2.5;
             if (cmd.angular_v > max_ang_vel) cmd.angular_v = max_ang_vel;
             else if (cmd.angular_v < -max_ang_vel) cmd.angular_v = -max_ang_vel;
 
