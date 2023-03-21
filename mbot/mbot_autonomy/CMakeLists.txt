@@ -28,6 +28,7 @@ target_include_directories(motion_controller PRIVATE
   include
 )
 
+# DRIVE SQUARE
 add_executable(drive_square src/mbot/drive_square.cpp)
 
 target_link_libraries(drive_square
@@ -36,6 +37,17 @@ target_link_libraries(drive_square
   mbot_lcm_msgs-cpp
 )
 target_include_directories(drive_square PRIVATE
+  include
+)
+# DRIVE_MAZE
+add_executable(drive_maze src/mbot/drive_maze.cpp)
+
+target_link_libraries(drive_maze
+  common_utils
+  lcm
+  mbot_lcm_msgs-cpp
+)
+target_include_directories(drive_maze PRIVATE
   include
 )
 

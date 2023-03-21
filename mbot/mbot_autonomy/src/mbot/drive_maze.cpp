@@ -16,7 +16,7 @@ int main(int argc, char** argv)
     double pp = M_PI/2;
     double pointXList[9]={ll,ll,2*ll,2*ll,3*ll,3*ll,4*ll,4*ll,5*ll};
     double pointYList[9]={0,ll,ll,-ll,-ll,ll,ll,0,0};
-    double pointThetaList[9]={pp,0,-pp,0,pp,0,-pp,0,0};
+    double pointThetaList[9]={pp,0,3*pp,0,pp,0,3*pp,0,0};
 
     
     if(argc > 1)

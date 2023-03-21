@@ -21,6 +21,9 @@
 
 #include "maneuver_controller.h"
 
+
+#include <fstream>
+
 /////////////////////// TODO: /////////////////////////////
 /**
  * Code below is a little more than a template. You will need
@@ -35,6 +38,20 @@
  *      to avoid commands to slow for your bots or ones too high
  */
 ///////////////////////////////////////////////////////////
+void clearPosFile()
+{
+    std::ofstream file("/home/pi/botlab-w23/posData/posData.txt");
+    file<<"";
+    file.close();
+}
+
+void writePos(double x, double y, double theta)
+{
+    std::ofstream myfile;
+    myfile.open ("/home/pi/botlab-w23/posData/posData.txt",std::ios::app);
+    myfile << x << "," << y << "," << theta << ",";
+    myfile.close();
+}
 
 class StraightManeuverController : public ManeuverControllerBase
 {
@@ -147,7 +164,7 @@ class SmartManeuverController : public ManeuverControllerBase
 {
 
 private:
-    float pid[3] = {1.0, 2.5, 0.0}; //kp, ka, kb
+    float pid[3] = {0.8,50, 1}; //kp, ka, kb 3,40, 0
     float d_end_crit = 0.02;
     float d_end_midsteps = 0.08;
     float angle_end_crit = 0.2;
@@ -160,6 +177,10 @@ public:
         float dy = target.y - pose.y;
         float d_fwd = sqrt(dx * dx + dy * dy);
         float alpha = angle_diff(atan2(dy,dx), pose.theta);
+        writePos(pose.x,pose.y,pose.theta);
+
+
+
         // printf("alpha: %f\n", alpha);
 
         // // To avoid weird behaviour at alpha=pi/2, because it is a common case
@@ -173,7 +194,7 @@ public:
         float fwd_vel = vel_sign *  pid[0] * d_fwd;
         float turn_vel = pid[1] * alpha + pid[2] * beta;
 
-        // If alpha is more than 45 degrees, turn in place and then go
+        // If alpha is more than 45 degrees, turn in place and th writeen go
         if (fabs(alpha) > M_PI_4)
         {
             fwd_vel = 0;
@@ -403,24 +424,28 @@ private:
 
 int main(int argc, char** argv)
 {
+
     lcm::LCM lcmInstance(MULTICAST_URL);
     MotionController controller(&lcmInstance);
 
     signal(SIGINT, exit);
+    clearPosFile();
     
     while(true)
     {
         lcmInstance.handleTimeout(50);  // update at 20Hz minimum
+        double lSpeedLimit = 0.9;
+        
 
     	if(controller.timesync_initialized()){
             mbot_lcm_msgs::mbot_motor_command_t cmd = controller.updateCommand();
             // Limit command values
             // Fwd vel
-            if (cmd.trans_v > 0.3) cmd.trans_v = 0.3;
-            else if (cmd.trans_v < -0.3) cmd.trans_v = -0.3;
+            if (cmd.trans_v > lSpeedLimit) cmd.trans_v = lSpeedLimit;
+            else if (cmd.trans_v < -lSpeedLimit) cmd.trans_v = -lSpeedLimit;
 
             // Angular vel
-            float max_ang_vel = M_PI * 2.0 / 3.0;
+            float max_ang_vel = M_PI * 8 / 3.0;
             if (cmd.angular_v > max_ang_vel) cmd.angular_v = max_ang_vel;
             else if (cmd.angular_v < -max_ang_vel) cmd.angular_v = -max_ang_vel;
 
