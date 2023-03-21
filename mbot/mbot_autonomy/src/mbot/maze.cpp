@@ -10,7 +10,14 @@
 
 int main(int argc, char** argv)
 {
-    int numTimes = 4;
+    int numTimes = 1;
+    int numOfPoint = 9;
+    double ll = 0.61;
+    double pp = M_PI/2;
+    double pointXList[9]={ll,ll,2*ll,2*ll,3*ll,3*ll,4*ll,4*ll,5*ll};
+    double pointYList[9]={0,ll,ll,-ll,-ll,ll,ll,0,0};
+    double pointThetaList[9]={pp,0,-pp,0,pp,0,-pp,0,0};
+
     
     if(argc > 1)
     {
@@ -20,41 +27,22 @@ int main(int argc, char** argv)
     std::cout << "Commanding robot to drive around 1m square " << numTimes << " times.\n";
     
     mbot_lcm_msgs::robot_path_t path;
-    path.path.resize(numTimes * 4);
+    path.path.resize(9);
     
     mbot_lcm_msgs::pose_xyt_t nextPose;
     
     nextPose.x = 1.0f;
     nextPose.y = 0.0f;
     nextPose.theta = 0.0f;
-    for(int n = 0; n < numTimes; ++n)
+    for(int n = 0; n < numOfPoint; n++)
     {
-        path.path[4*n] = nextPose;
+        nextPose.x = pointXList[n];
+        nextPose.y = pointYList[n];
+        nextPose.theta = pointThetaList[n];
+        path.path[n] = nextPose;
     }
     
-    nextPose.x = 1.0f;
-    nextPose.y = 1.0f;
-    nextPose.theta = 0.0f;
-    for(int n = 0; n < numTimes; ++n)
-    {
-        path.path[4*n + 1] = nextPose;
-    }
     
-    nextPose.x = 0.0f;
-    nextPose.y = 1.0f;
-    nextPose.theta = 0.0f;
-    for(int n = 0; n < numTimes; ++n)
-    {
-        path.path[4*n + 2] = nextPose;
-    }
-    
-    nextPose.x = 0.0f;
-    nextPose.y = 0.0f;
-    nextPose.theta = 0.0f;
-    for(int n = 0; n < numTimes; ++n)
-    {
-        path.path[4*n + 3] = nextPose;
-    }
     
     // Return to original heading after completing all circuits
 //    nextPose.theta = 0.0f;
