@@ -33,12 +33,12 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t& scan,
     for(adjusted_ray_t ray : movingScan)
     {
         std::vector<int> inverseModelVal = Mapping::crudeInverseSensorModel(ray, map);
-        for(int i = 0; i<map.widthInCells())
+        for(int i = 0; i<map.widthInCells(); i++)
         {
-            for(int j = 0; j<map.heightInCells())      
+            for(int j = 0; j<map.heightInCells(); j++)      
             {
                 int idx = i * map.widthInCells() + j;
-                map.setLogOdds(map.logOdds(i,j) + inverseModelVal[idx] - L_0);
+                map.setLogOdds(i, j, map.logOdds(i,j) + inverseModelVal[idx] - L_0);
                 printf("cell (%d,%d): %d\n",i,j,map.logOdds(i,j));
             }
         }
@@ -100,11 +100,11 @@ std::vector<int> Mapping::crudeInverseSensorModel(const adjusted_ray_t& ray, Occ
     double theta = ray.theta;
 
     std::vector<int> inverseModelVal;
-    for(int i = 0; i<map.widthInCells())
+    for(int i = 0; i<map.widthInCells(); i++)
     {
-        for(int j = 0; j<map.heightInCells())      
+        for(int j = 0; j<map.heightInCells(); j++)      
         {
-            Point<double> cellCenter = cellInGlobalFrameInMeter(i,j);    
+            Point<double> cellCenter = map.cellInGlobalFrameInMeter(i,j);    
             double xi = cellCenter.x;
             double yi = cellCenter.y;
 
