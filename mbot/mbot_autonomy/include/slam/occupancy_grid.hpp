@@ -94,6 +94,7 @@ public:
     
     Point<float> originInGlobalFrame(void) const { return globalOrigin_; }
     
+    
     void setOrigin(float x, float y);
 
     /**
@@ -194,6 +195,17 @@ public:
     * \return   True if the map is successfully loaded. False if the file can't be opened or some other I/O error occurs.
     */
     bool loadFromFile(const std::string& filename);
+
+    
+    /**
+    * get coordinate of cell(x,y) in global fram
+    * 
+    * \param    x            width coordinate of cell
+    * \param    y            hight coordinate of cell
+    * \return   Point<double> indicating the coordinate of cell in global fram in meter
+    */
+    Point<double> cellInGlobalFrameInMeter(int x, int y);
+    
     
 private:
     

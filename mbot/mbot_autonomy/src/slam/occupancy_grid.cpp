@@ -171,3 +171,13 @@ bool OccupancyGrid::loadFromFile(const std::string& filename)
     
     return true;
 }
+
+Point<double> OccupancyGrid::cellInGlobalFrameInMeter(int x, int y)
+{
+    double centerX = globalOrigin_.x + x*metersPerCell_;
+    double centerY = globalOrigin_.y + y*metersPerCell_;
+    return Point<double>(centerX,centerY);
+
+} 
+    
+    

@@ -29,6 +29,22 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t& scan,
     }
 
     MovingLaserScan movingScan(scan, previousPose_, pose);
+
+    for(adjusted_ray_t ray : movingScan)
+    {
+        std::vector<int> inverseModelVal = Mapping::crudeInverseSensorModel(ray, map);
+        for(int i = 0; i<map.widthInCells())
+        {
+            for(int j = 0; j<map.heightInCells())      
+            {
+                int idx = i * map.widthInCells() + j;
+                map.setLogOdds(map.logOdds(i,j) + inverseModelVal[idx] - L_0);
+                printf("cell (%d,%d): %d\n",i,j,map.logOdds(i,j));
+            }
+        }
+        
+    }
+    return;
 }
 
 void Mapping::scoreEndpoint(const adjusted_ray_t& ray, OccupancyGrid& map)
@@ -76,38 +92,44 @@ std::vector<Point<int>> Mapping::divideAndStepAlongRay(const adjusted_ray_t& ray
     return cells_touched;
 }
 
-std::vector<Point<int>> Mapping::crudeReverseSensorModel(const adjusted_ray_t& ray, std::vector<Point<int>> cells)
+std::vector<int> Mapping::crudeInverseSensorModel(const adjusted_ray_t& ray, OccupancyGrid& map)
 {
     double xt = ray.origin.x;
     double yt = ray.origin.y;
     double zt = ray.range;
     double theta = ray.theta;
 
-    std::vector<double> inverseModelVal;
-
-    for (Point<int> cell : cells)
+    std::vector<int> inverseModelVal;
+    for(int i = 0; i<map.widthInCells())
     {
-        double xi = cell.x;
-        double yi = cell.y;
-
-        double phi = atan2(xi-xt,yi-yt);
-        double d = sqrt((xi-xt)*(xi-xt)+(yi-yt)*(yi-yt));
-        
-        // check if point visiable by the ray
-        if(abs(phi - theta) > (REVERSE_MODEL_BETA/2) || (d > (zt+REVERSE_MODEL_ALPHA/2)))
+        for(int j = 0; j<map.heightInCells())      
         {
-            // block is not in visiable area
-            inverseModelVal.push_back(L_0);
-        }
+            Point<double> cellCenter = cellInGlobalFrameInMeter(i,j);    
+            double xi = cellCenter.x;
+            double yi = cellCenter.y;
 
-        else if(d > zt-REVERSE_MODEL_ALPHA/2)
-        {
-            inverseModelVal.push_back(L_OCCUPIED);
-        }
+            double phi = atan2(xi-xt,yi-yt);
+            double d = sqrt((xi-xt)*(xi-xt)+(yi-yt)*(yi-yt));
+            
+            // check if point visiable by the ray
+            if(abs(phi - theta) > (REVERSE_MODEL_BETA/2) || (d > (zt+REVERSE_MODEL_ALPHA/2)))
+            {
+                // block is not in visiable area
+                inverseModelVal.push_back(L_0);
+            }
 
-        else
-        {
-            inverseModelVal.push_back(L_FREE);
+            else if(d > zt - REVERSE_MODEL_ALPHA/2)
+            {
+                inverseModelVal.push_back(L_OCCUPIED);
+            }
+
+            else
+            {
+                inverseModelVal.push_back(L_FREE);
+            }
         }
     }
+
+
+    return inverseModelVal;
 }
