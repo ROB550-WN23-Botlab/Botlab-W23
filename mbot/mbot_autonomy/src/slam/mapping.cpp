@@ -2,6 +2,7 @@
 #include <utils/grid_utils.hpp>
 #include <numeric>
 #include <chrono> 
+#include <math.h>
 using namespace std::chrono; 
 
 Mapping::Mapping(float maxLaserDistance, int8_t hitOdds, int8_t missOdds)
@@ -17,7 +18,17 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t& scan,
                         const mbot_lcm_msgs::pose_xyt_t& pose,
                         OccupancyGrid& map)
 {
+    
     //////////////// TODO: Implement your occupancy grid algorithm here ///////////////////////
+    if(!initialized_)
+    {
+        previousPose_ = pose;
+        initialized_ = true;
+        printf("Mapping::updateMap : first position initialized!\n\n");
+        return;
+    }
+
+    MovingLaserScan movingScan(scan, previousPose_, pose);
 }
 
 void Mapping::scoreEndpoint(const adjusted_ray_t& ray, OccupancyGrid& map)
@@ -63,4 +74,40 @@ std::vector<Point<int>> Mapping::divideAndStepAlongRay(const adjusted_ray_t& ray
     //////////////// TODO: Implement divide and step ////////////////
     std::vector<Point<int>> cells_touched;
     return cells_touched;
+}
+
+std::vector<Point<int>> Mapping::crudeReverseSensorModel(const adjusted_ray_t& ray, std::vector<Point<int>> cells)
+{
+    double xt = ray.origin.x;
+    double yt = ray.origin.y;
+    double zt = ray.range;
+    double theta = ray.theta;
+
+    std::vector<double> inverseModelVal;
+
+    for (Point<int> cell : cells)
+    {
+        double xi = cell.x;
+        double yi = cell.y;
+
+        double phi = atan2(xi-xt,yi-yt);
+        double d = sqrt((xi-xt)*(xi-xt)+(yi-yt)*(yi-yt));
+        
+        // check if point visiable by the ray
+        if(abs(phi - theta) > (REVERSE_MODEL_BETA/2) || (d > (zt+REVERSE_MODEL_ALPHA/2)))
+        {
+            // block is not in visiable area
+            inverseModelVal.push_back(L_0);
+        }
+
+        else if(d > zt-REVERSE_MODEL_ALPHA/2)
+        {
+            inverseModelVal.push_back(L_OCCUPIED);
+        }
+
+        else
+        {
+            inverseModelVal.push_back(L_FREE);
+        }
+    }
 }

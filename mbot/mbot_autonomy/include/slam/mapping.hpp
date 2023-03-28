@@ -9,6 +9,21 @@
 #include <vector>
 #include <tuple>
 
+
+// find definition of param at https://youtu.be/1f_m5aJFIj4  lecture 12
+// radius difference of ring  (ring center is the ray end point, cell in ring are consider to be occupied)
+double REVERSE_MODEL_ALPHA = 0.01;
+
+// angle of approximation
+double REVERSE_MODEL_BETA = 2*3.1415926/100;  
+
+double L_FREE = -1.986;   // ln(p_occupied/p_free)  = log(0.25/0.75)
+
+double L_OCCUPIED = 1.986;   // ln(p_occupied/p_free)  = log(.75/0.25)
+
+double L_0 = 0;   // log(prior)
+
+// 
 /**
 * Mapping implements the occupancy grid mapping algorithm. 
 */
@@ -46,6 +61,7 @@ private:
     void scoreRay(const adjusted_ray_t& ray, OccupancyGrid& map);
     std::vector<Point<int>> bresenham(const adjusted_ray_t& ray, const OccupancyGrid& map);
     std::vector<Point<int>> divideAndStepAlongRay(const adjusted_ray_t& ray, const OccupancyGrid& map);
+    std::vector<Point<int>> crudeReverseSensorModel(const adjusted_ray_t& ray, std::vector<Point<int>> cells);
     //////////////////// TODO: Add any private members needed for your occupancy grid mapping algorithm ///////////////
 
 };
