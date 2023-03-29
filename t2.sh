@@ -1,1 +1,1 @@
-lcm-logplayer-gui ~/botlab-data/Original_logs/convex_10mx10m_5cm.log
+lcm-logplayer-gui ~/botlab-data/Original_logs/obstacle_slam_10mx10m_5cm.log

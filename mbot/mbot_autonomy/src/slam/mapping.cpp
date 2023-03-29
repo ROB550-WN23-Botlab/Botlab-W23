@@ -46,6 +46,7 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t& scan,
         }
         
     }
+    printf("finish one update!\n]n\n");
     previousPose_ = pose;
     return;
 }
@@ -107,39 +108,45 @@ std::vector<int> Mapping::crudeInverseSensorModel(const adjusted_ray_t& ray, Occ
     {
         for(int j = 0; j<map.heightInCells(); j++)      
         {
-            Point<double> cellCenter = map.cellInGlobalFrameInMeter(i,j);    
+            // Point<double> cellCenter = map.cellInGlobalFrameInMeter(i,j);
+            Point<double> cellCenter = grid_position_to_global_position(Point<double>(double(i),double(j)), map);
+            // printf("cell (%d,%d):(%f,%f)\n",i,j,cellCenter.x,cellCenter.y);    
             double xi = cellCenter.x;
             double yi = cellCenter.y;
 
             double phi = atan2(xi-xt,yi-yt);
+            if(phi<0)
+            {
+                phi = phi + 2*3.14159;
+            }
             double d = sqrt((xi-xt)*(xi-xt)+(yi-yt)*(yi-yt));
             
             // check if point visiable by the ray
             if(abs(phi - theta) > (INVERSE_MODEL_BETA/2) || (d > (zt+INVERSE_MODEL_ALPHA/2)))
             {
                 // block is not in visiable area
-                printf("\n\ncell(%d,%d) is no visiable\n ",i,j);
-                if(abs(phi - theta) > (INVERSE_MODEL_BETA/2))
-                {
-                    printf("    angle out of range: phi=%f (theta = %f)\n",phi,theta);
-                }
-                if(d > (zt+INVERSE_MODEL_ALPHA/2))
-                {
-                    printf("   d out of range: d=%f (zt=%f)\n",d,zt);
-                }
+                // printf("\n\ncell(%d,%d) is no visiable\n ",i,j);
+                // if(abs(phi - theta) > (INVERSE_MODEL_BETA/2))
+                // {
+                //     printf("    angle out of range: phi=%f (theta = %f)\n",phi,theta);
+                // }
+                // if(d > (zt+INVERSE_MODEL_ALPHA/2))
+                // {
+                //     printf("   d out of range: d=%f (zt=%f)\n",d,zt);
+                // }
                 inverseModelVal.push_back(L_0);
             }
 
             else if(d > (zt - INVERSE_MODEL_ALPHA/2))
             {
-                printf("cell(%d,%d) is occupied, angle_difference: %f, distance_difference:%f\n",i,j,abs(phi - theta), (d -zt));
+                // printf("cell(%d,%d) is occupied, angle_difference: %f, distance_difference:%f\n",i,j,abs(phi - theta), (d -zt));
                 inverseModelVal.push_back(kHitOdds_);
             }
 
             else
             {
-                printf("cell(%d,%d) is free, angle_difference: %f, distance_difference:%f\n",i,j,abs(phi - theta), (d -zt));
-                inverseModelVal.push_back(kMissOdds_);
+                // printf("cell(%d,%d) is free, angle_difference: %f, distance_difference:%f\n",i,j,abs(phi - theta), (d -zt));
+                inverseModelVal.push_back(-kMissOdds_);
             }
         }
     }
