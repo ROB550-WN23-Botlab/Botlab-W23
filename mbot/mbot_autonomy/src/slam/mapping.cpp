@@ -5,6 +5,8 @@
 #include <math.h>
 using namespace std::chrono; 
 
+
+
 Mapping::Mapping(float maxLaserDistance, int8_t hitOdds, int8_t missOdds)
 : kMaxLaserDistance_(maxLaserDistance)
 , kHitOdds_(hitOdds)
@@ -18,6 +20,7 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t& scan,
                         const mbot_lcm_msgs::pose_xyt_t& pose,
                         OccupancyGrid& map)
 {
+    printf("in Mapping::updateMap \n");
     
     //////////////// TODO: Implement your occupancy grid algorithm here ///////////////////////
     if(!initialized_)
@@ -25,7 +28,6 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t& scan,
         previousPose_ = pose;
         initialized_ = true;
         printf("Mapping::updateMap : first position initialized!\n\n");
-        return;
     }
 
     MovingLaserScan movingScan(scan, previousPose_, pose);
@@ -39,11 +41,12 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t& scan,
             {
                 int idx = i * map.widthInCells() + j;
                 map.setLogOdds(i, j, map.logOdds(i,j) + inverseModelVal[idx] - L_0);
-                printf("cell (%d,%d): %d\n",i,j,map.logOdds(i,j));
+                // printf("cell (%d,%d): %d\n",i,j,map.logOdds(i,j));
             }
         }
         
     }
+    previousPose_ = pose;
     return;
 }
 
@@ -112,20 +115,31 @@ std::vector<int> Mapping::crudeInverseSensorModel(const adjusted_ray_t& ray, Occ
             double d = sqrt((xi-xt)*(xi-xt)+(yi-yt)*(yi-yt));
             
             // check if point visiable by the ray
-            if(abs(phi - theta) > (REVERSE_MODEL_BETA/2) || (d > (zt+REVERSE_MODEL_ALPHA/2)))
+            if(abs(phi - theta) > (INVERSE_MODEL_BETA/2) || (d > (zt+INVERSE_MODEL_ALPHA/2)))
             {
                 // block is not in visiable area
+                printf("\n\ncell(%d,%d) is no visiable\n ",i,j);
+                if(abs(phi - theta) > (INVERSE_MODEL_BETA/2))
+                {
+                    printf("    angle out of range: phi=%f (theta = %f)\n",phi,theta);
+                }
+                if(d > (zt+INVERSE_MODEL_ALPHA/2))
+                {
+                    printf("   d out of range: d=%f (zt=%f)\n",d,zt);
+                }
                 inverseModelVal.push_back(L_0);
             }
 
-            else if(d > zt - REVERSE_MODEL_ALPHA/2)
+            else if(d > (zt - INVERSE_MODEL_ALPHA/2))
             {
-                inverseModelVal.push_back(L_OCCUPIED);
+                printf("cell(%d,%d) is occupied, angle_difference: %f, distance_difference:%f\n",i,j,abs(phi - theta), (d -zt));
+                inverseModelVal.push_back(kHitOdds_);
             }
 
             else
             {
-                inverseModelVal.push_back(L_FREE);
+                printf("cell(%d,%d) is free, angle_difference: %f, distance_difference:%f\n",i,j,abs(phi - theta), (d -zt));
+                inverseModelVal.push_back(kMissOdds_);
             }
         }
     }

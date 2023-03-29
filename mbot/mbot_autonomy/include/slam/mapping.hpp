@@ -9,19 +9,22 @@
 #include <vector>
 #include <tuple>
 
-
 // find definition of param at https://youtu.be/1f_m5aJFIj4  lecture 12
 // radius difference of ring  (ring center is the ray end point, cell in ring are consider to be occupied)
-double REVERSE_MODEL_ALPHA = 0.01;
+#define  INVERSE_MODEL_ALPHA  0.01
 
 // angle of approximation
-double REVERSE_MODEL_BETA = 2*3.1415926/100;  
+#define  INVERSE_MODEL_BETA  2*3.1415926/10 
 
-int L_FREE = -2;   // ln(p_occupied/p_free)  = log(0.25/0.75)
+#define L_FREE  -2  // ln(p_occupied/p_free)  = log(0.25/0.75)
 
-int L_OCCUPIED = 2;   // ln(p_occupied/p_free)  = log(.75/0.25)
+#define  L_OCCUPIED  2   // ln(p_occupied/p_free)  = log(.75/0.25)
 
-int L_0 = 0;   // log(prior), typically 0
+#define  L_0  0   // log(prior), typically 0
+
+
+
+
 
 // 
 /**
@@ -73,6 +76,9 @@ private:
     std::vector<Point<int>> divideAndStepAlongRay(const adjusted_ray_t& ray, const OccupancyGrid& map);
     
     //////////////////// TODO: Add any private members needed for your occupancy grid mapping algorithm ///////////////
+    
+    
+    
 
 };
 
