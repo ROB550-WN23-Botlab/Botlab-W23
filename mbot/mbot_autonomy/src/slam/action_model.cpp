@@ -91,6 +91,7 @@ mbot_lcm_msgs::particle_t ActionModel::applyAction(const mbot_lcm_msgs::particle
     return newSample;
 }
 
+
 float ActionModel::normal_sample_(float mean, float stddev)
 {
     // Use random seed and normal_distribution to random sample from the given mean and stddev
