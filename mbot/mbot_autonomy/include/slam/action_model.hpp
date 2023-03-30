@@ -62,19 +62,31 @@ private:
     double min_dist_;
     double min_theta_;
 
+    uint64_t utime_;
+    bool moved_;
+    bool initialized_;
+
     mbot_lcm_msgs::pose_xyt_t previousPose_;
     double dx_;
     double dy_;
+    double ds_;
+    double alpha_;
     double dtheta_;
     uint64_t utime_;
 
+    double eps_sig_1_;
+    double eps_sig_2_;
+    double eps_sig_3_;
+
     bool initialized_;
 
-    std::mt19937 numberGenerator_;
+    std::mt19937 random_gen;
 
     float xStd_;
     float yStd_;
     float thetaStd_;
+
+    float normal_sample_(float mean, float stddev);
 };
 
 #endif // SLAM_ACTION_MODEL_HPP
