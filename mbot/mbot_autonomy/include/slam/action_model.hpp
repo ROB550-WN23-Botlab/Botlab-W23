@@ -5,6 +5,8 @@
 #include <mbot_lcm_msgs/particle_t.hpp>
 #include <random>
 
+
+
 /**
 * ActionModel implements the sampling-based odometry action model for estimating the motion of the robot between
 * time t and t'.
@@ -75,6 +77,20 @@ private:
     float xStd_;
     float yStd_;
     float thetaStd_;
+
+    static const int NUM_OF_RESAMPLE = 11;
+    static const int NUM_OF_SAMPLE = 1000;
+
 };
+
+
+
+double normal_pdf(double x, double m, double s)
+{
+    static const double inv_sqrt_2pi = 0.3989422804014327;
+    double a = (x - m) / s;
+
+    return inv_sqrt_2pi / s * std::exp(-0.5f * a * a);
+}
 
 #endif // SLAM_ACTION_MODEL_HPP
