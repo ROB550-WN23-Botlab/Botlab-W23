@@ -73,36 +73,51 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t &odometry)
     // update mean, std
     int totalResampleNum = NUM_OF_RESAMPLE * NUM_OF_RESAMPLE * NUM_OF_RESAMPLE;
 
-    double updatedXSum =0;
-    double updatedYSum =0;
-    double updatedThetaSum =0;
-    double weightSum = 0;
+    long double weightedSumOfX =0;
+    long double weightedSumOfY =0;
+    long double weightedSumOfTheta =0;
+
+
+    long double weightedSumOfXSquare=0;
+    long double weightedSumOfYSquare =0;
+    long double weightedSumOfThetaSquare =0;
+    
+    long double sumOfWeight = 0;
 
     for (int i=0;i<totalResampleNum;i++)
     {
         double weightedX = particleSet[i].pose.x * particleSet[i].weight;
         double weightedY = particleSet[i].pose.y * particleSet[i].weight;
         double weightedTheta = particleSet[i].pose.theta * particleSet[i].weight;
+
+        double weightedXSquare = particleSet[i].pose.x * particleSet[i].pose.x * particleSet[i].weight;
+        double weightedYSquare = particleSet[i].pose.y * particleSet[i].pose.y * particleSet[i].weight;
+        double weightedThetaSquare = particleSet[i].pose.theta * particleSet[i].pose.theta * particleSet[i].weight;
         
 
-        updatedXSum += weightedX;
-        updatedYSum += weightedY;
-        updatedThetaSum += weightedTheta;
-        weightSum += particleSet[i].weight;
+        weightedSumOfX += weightedX;
+        weightedSumOfY += weightedY;
+        weightedSumOfTheta += weightedTheta;
+        weightedSumOfXSquare += weightedXSquare;
+        weightedSumOfYSquare += weightedYSquare;
+        weightedSumOfThetaSquare += weightedThetaSquare;
+        sumOfWeight += particleSet[i].weight;
     }
 
-    double updatedXMean = updatedXSum / weightSum;
-    double updatedYMean = updatedXSum / weightSum;
-    double updatedThetaMean = updatedThetaSum / weightSum;
+    // normalize mean
+    double MeanOfX = weightedSumOfX / sumOfWeight;
+    double MeanOfY = weightedSumOfY / sumOfWeight;
+    double MeanOfTheta = weightedSumOfTheta / sumOfWeight;
 
    
    
-    previousPose_.x=updatedXMean;
-    previousPose_.y=updatedYMean;
-    previousPose_.theta=updatedThetaMean;
+    previousPose_.x=MeanOfX;
+    previousPose_.y=MeanOfY;
+    previousPose_.theta=MeanOfTheta;
 
 
     // Update variance of x,y,theta
+
 
 
 
