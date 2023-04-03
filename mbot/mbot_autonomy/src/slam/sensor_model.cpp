@@ -16,5 +16,12 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
     double likelihood = 0.0;
     MovingLaserScan movingScan(scan, sample.parent_pose, sample.pose, ray_stride_);
     // TODO
+    for(adjusted_ray_t ray : movingScan)
+    {
+        float measuredRange = ray.range;
+        Point<float> measuredOrigin = ray.origin;
+        float measuredThetaInGlobal = ray.theta;
+        
+    }
     return likelihood;
 }
