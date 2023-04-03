@@ -137,6 +137,10 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
         }
 
     }
+    if(numOfMatch >= movingScan.size()*0.98)
+    {
+        likelihood *= 15.0;
+    }
 
 
 
