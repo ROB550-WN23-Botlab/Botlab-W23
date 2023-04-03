@@ -72,21 +72,24 @@ mbot_lcm_msgs::particle_t ActionModel::applyAction(const mbot_lcm_msgs::particle
      // Make sure you create a new valid particle_t. Don't forget to set the new time and new parent_pose.
     mbot_lcm_msgs::particle_t newSample = sample;
 
+    // Assign predicted pose into pose
+        // Sample one of the action result using normal_sample_
+
     float sampled_eps_1 = normal_sample_(0.0, eps_sig_1_);
     float sampled_eps_2 = normal_sample_(0.0, eps_sig_2_);
     float sampled_eps_3 = normal_sample_(0.0, eps_sig_3_);
 
-    //Update the alpha and distance with sampled error
+        //Update the alpha and distance with sampled error
     float dx_sampled = ((float)ds_ + sampled_eps_2) * (float)cos((double)newSample.pose.theta + alpha_ + (double)sampled_eps_1);
     float dy_sampled = ((float)ds_ + sampled_eps_2) * (float)sin((double)newSample.pose.theta + alpha_ + (double)sampled_eps_1);
     float dtheta_sampeld = wrap_to_pi(dtheta_ + sampled_eps_1 + sampled_eps_3);
    
-    //Update the newSample.pose with delta calculated
+        //Update the newSample.pose with delta calculated
     newSample.pose.x += dx_sampled;
     newSample.pose.y += dy_sampled;
     newSample.pose.theta += dtheta_sampeld;
     newSample.pose.utime = utime_;
-
+        // Turn parent_pose into current pose and turn pose into the sampled future pose
     newSample.parent_pose = sample.pose;
     return newSample;
 }
