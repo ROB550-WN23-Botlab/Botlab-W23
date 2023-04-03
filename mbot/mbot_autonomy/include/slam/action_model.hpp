@@ -78,6 +78,17 @@ private:
     float yStd_;
     float thetaStd_;
 
+
+
+    double delta_angle1_; // angle of rotation 1  // alpha
+    double delta_s_;   // distance of trans 1
+    double delta_angle2_;
+
+    double stdOfAngle1_;
+    double stdOfTrans1_;
+    double stdOfAngle2_;
+
+
     static const int NUM_OF_RESAMPLE = 11;
     static const int NUM_OF_SAMPLE = 1000;
 
@@ -85,7 +96,7 @@ private:
 
 
 
-double normal_pdf(double x, double m, double s)
+inline double normal_pdf(double x, double m, double s)
 {
     static const double inv_sqrt_2pi = 0.3989422804014327;
     double a = (x - m) / s;

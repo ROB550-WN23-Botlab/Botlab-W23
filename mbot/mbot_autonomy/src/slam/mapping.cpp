@@ -132,7 +132,7 @@ std::vector<Point<int>> Mapping::bresenham(const adjusted_ray_t &ray, const Occu
         }
     }
     cells_touched.push_back(Point<int>(x1, y1)); // the last point is occupied, while prvious are free
-    printf("%d cell are touched in this ray\n",cells_touched.size());
+    printf("%d cell are touched in this ray\n",int(cells_touched.size()));
     return cells_touched;
     
 }
