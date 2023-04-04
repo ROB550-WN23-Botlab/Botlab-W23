@@ -1,3 +1,3 @@
-source ~/botlab-w23/system_compilation/setenv.sh
-cd ~/botlab-w23/system_compilation/bin
+source ~/botlabw23sha/botlab-w23/system_compilation/setenv.sh
+cd ~/botlabw23sha/botlab-w23/system_compilation/bin
 ./botgui

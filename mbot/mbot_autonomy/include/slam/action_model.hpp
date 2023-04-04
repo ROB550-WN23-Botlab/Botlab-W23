@@ -72,13 +72,11 @@ private:
     double ds_;
     double alpha_;
     double dtheta_;
-    uint64_t utime_;
 
     double eps_sig_1_;
     double eps_sig_2_;
     double eps_sig_3_;
 
-    bool initialized_;
 
     std::mt19937 random_gen;
 
