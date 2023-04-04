@@ -88,6 +88,29 @@ ParticleList ParticleFilter::resamplePosteriorDistribution(const OccupancyGrid* 
 {
     //////////// TODO: Implement your algorithm for resampling from the posterior distribution ///////////////////
     ParticleList prior;
+    
+    // low variance sampler
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::uniform_real_distribution<double> rSampler(0,1.0/kNumParticles_);
+
+    double r = rSampler(gen);
+
+    int particleIdx = 0;
+    double acw = posterior_[0].weight; //accumulate weight
+
+    for(int i=0; i<kNumParticles_;i++)
+    {
+        double u = r + (1.0*i)/kNumParticles_;  // make sure we are using "double" in fraction
+        while(acw <u)
+        {
+            particleIdx++;
+            acw += posterior_[particleIdx].weight;
+        }
+        prior.push_back(posterior_[particleIdx]);
+    }
+
     return prior;
 }
 
@@ -96,6 +119,11 @@ ParticleList ParticleFilter::computeProposalDistribution(const ParticleList& pri
 {
     //////////// TODO: Implement your algorithm for creating the proposal distribution by sampling from the ActionModel
     ParticleList proposal;
+    
+    for(auto& p : prior)
+    {
+        proposal.push_back(actionModel_.applyAction(p));
+    }
     return proposal;
 }
 
