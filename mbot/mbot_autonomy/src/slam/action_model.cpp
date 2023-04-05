@@ -34,20 +34,22 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t &odometry)
         moved = true;
     }
 
-    double delta_angle1 = angle_diff(atan2(dx_, dy_) , previousPose_.theta); // angle of rotation 1  // alpha
-    double delta_s = sqrt(dx_ * dx_ + dy_ * dy_);   // distance of trans 1
-    double delta_angle2 = angle_diff(dtheta_ , delta_angle1);               // angle of rotation 2  //delta_theta - alpha
+    delta_angle1_ = angle_diff(atan2(dx_, dy_) , previousPose_.theta); // angle of rotation 1  // alpha
+    delta_s_ = sqrt(dx_ * dx_ + dy_ * dy_);   // distance of trans 1
+    delta_angle2_ = angle_diff(dtheta_ , delta_angle1_);               // angle of rotation 2  //delta_theta - alpha
 
     // std::random_device rd;
     // std::mt19937 gen(rd());
 
-    stdOfAngle1_ = k1_ * delta_angle1;
-    stdOfTrans1_ = k2_ * delta_s;
-    stdOfAngle2_ = k1_ * delta_angle2;
+    stdOfAngle1_ = k1_ * delta_angle1_;
+    stdOfTrans1_ = k2_ * delta_s_;
+    stdOfAngle2_ = k1_ * delta_angle2_;
 
     previousPose_ = odometry;
 
-    printf("meanPose:(%.3f,%.3f,%.3f),std:(%.3f,%.3f,%.3f)\n",previousPose_.x,previousPose_.y,previousPose_.theta,stdOfAngle1_,stdOfTrans1_,stdOfAngle2_);
+    // printf("odometry:(%.3f,%.3f,%.3f)\n",odometry.x,odometry.y,odometry.theta);
+
+    // printf("meanPose:(%.3f,%.3f,%.3f),std:(%.3f,%.3f,%.3f)\n",previousPose_.x,previousPose_.y,previousPose_.theta,stdOfAngle1_,stdOfTrans1_,stdOfAngle2_);
 
 
 
@@ -78,12 +80,15 @@ mbot_lcm_msgs::particle_t ActionModel::applyAction(const mbot_lcm_msgs::particle
 
     mbot_lcm_msgs::pose_xyt_t newPose;
 
+    // std::cout<<"<action_model.cpp: >  ";
+    // std::cout<< "delta_s="<<delta_s_<<"delta_angle1="<<delta_angle1_<<"delta_angle2="<<delta_angle2_<<"\n";
+
     newPose.x = float(curPose.x +
                       (delta_s_ + epsilon_noise_trans1) * cos(curPose.theta + delta_angle1_ + epsilon_noise_rot1));
     newPose.y = float(curPose.y +
                       (delta_s_ + epsilon_noise_trans1) * sin(curPose.theta + delta_angle1_ + epsilon_noise_rot1));
 
-    newPose.theta = curPose.theta + dtheta_ + epsilon_noise_rot1 + epsilon_noise_rot1;
+    newPose.theta = curPose.theta + (delta_angle1_+delta_angle2_) + epsilon_noise_rot1 + epsilon_noise_rot1;
 
     newPose.utime = previousPose_.utime;
 
@@ -91,7 +96,12 @@ mbot_lcm_msgs::particle_t ActionModel::applyAction(const mbot_lcm_msgs::particle
     newSample.parent_pose = curPose;
     newSample.weight = sample.weight;
 
-    printf("noised Pose:(%f,%f,%f)\n",newPose.x,newPose.y,newPose.theta);
+    // printf("noised Pose:(%f,%f,%f)\n",newPose.x,newPose.y,newPose.theta);
 
+    // std::cout<<"previous Pose("<<sample.pose.x<<","<<sample.pose.theta<<","<<sample.pose.x<<")";
+    // std::cout<<"    new Pose("<<newSample.pose.x<<","<<newSample.pose.theta<<","<<newSample.pose.x<<")\n";
+    std::cout<<"<action_model.cpp: >:\n";
+    std::cout<<"particle pose("<<curPose.x<<","<<curPose.y<<","<<curPose.theta<<")\n==>\n";
+    std::cout<<"particle pose("<<newPose.x<<","<<newPose.y<<","<<newPose.theta<<")\n\n\n";
     return newSample;
 }

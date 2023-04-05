@@ -143,6 +143,10 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
     }
 
 
+    std::cout<<"<sensor_model.cpp>:   particle match map:"<< (1.0*numOfMatch/movingScan.size())<<"\n";
+    std::cout<<"likelihood"<<likelihood<<"\n";
+
+
 
     
     return likelihood;
