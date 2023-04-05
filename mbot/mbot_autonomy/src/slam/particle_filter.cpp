@@ -10,7 +10,7 @@ ParticleFilter::ParticleFilter(int numParticles)
 : kNumParticles_ (numParticles),
   samplingAugmentation(0.5, 0.9, numParticles),
   distribution_quality(1),
-  quality_reinvigoration_percentage(0.1)
+  quality_reinvigoration_percentage(25)
 {
     assert(kNumParticles_ > 1);
     posterior_.resize(kNumParticles_);
@@ -20,11 +20,22 @@ ParticleFilter::ParticleFilter(int numParticles)
 void ParticleFilter::initializeFilterAtPose(const mbot_lcm_msgs::pose_xyt_t& pose)
 {
     ///////////// TODO: Implement your method for initializing the particles in the particle filter /////////////////
+    double sampleWeight = 1.0/kNumParticles_;
+    posteriorPose_ = pose;
+    std::cout<<"initial pose:("<<pose.x<<","<<pose.y<<","<<pose.theta<<")"<<std::endl;
+
 }
 
 void ParticleFilter::initializeFilterRandomly(const OccupancyGrid& map)
 {
     ///////////// TODO: Implement your method for initializing the particles in the particle filter /////////////////
+    double sampleWeight = 1.0/kNumParticles_;
+    for(auto &&p :posterior_)
+    {
+        randomPoseGen.update_map(&map);
+        p = randomPoseGen.get_particle();
+        p.weight = sampleWeight;
+    }
 }
 
 void ParticleFilter::resetOdometry(const mbot_lcm_msgs::pose_xyt_t& odometry)
@@ -135,6 +146,20 @@ ParticleList ParticleFilter::computeNormalizedPosterior(const ParticleList& prop
     /////////// TODO: Implement your algorithm for computing the normalized posterior distribution using the
     ///////////       particles in the proposal distribution
     ParticleList posterior;
+    double weightSum =0;
+    for (mbot_lcm_msgs::particle_t p : proposal)
+    {
+        p.weight = sensorModel_.likelihood(p,laser,map);
+        weightSum += p.weight;
+        posterior.push_back(p);
+
+    }
+    
+    for (mbot_lcm_msgs::particle_t p_ : posterior)
+    {
+        p_.weight /= weightSum;
+    }
+
     return posterior;
 }
 
@@ -143,6 +168,7 @@ mbot_lcm_msgs::pose_xyt_t ParticleFilter::estimatePosteriorPose(const ParticleLi
 {
     //////// TODO: Implement your method for computing the final pose estimate based on the posterior distribution
     mbot_lcm_msgs::pose_xyt_t pose;
+    pose = computeParticlesAverage(posterior); //posterior must be normalized (weightSum = 1)
     return pose;
 }
 
@@ -150,5 +176,15 @@ mbot_lcm_msgs::pose_xyt_t ParticleFilter::computeParticlesAverage(const Particle
 {
     //////// TODO: Implement your method for computing the average of a pose distribution
     mbot_lcm_msgs::pose_xyt_t avg_pose;
+    avg_pose.x = 0;
+    avg_pose.y = 0;
+    avg_pose.theta = 0;
+    for (mbot_lcm_msgs::particle_t p : particles_to_average)
+    {
+        avg_pose.x += p.pose.x * p.weight;
+        avg_pose.y += p.pose.y * p.weight;
+        avg_pose.theta += p.pose.theta * p.weight;
+    }
+    avg_pose.utime = particles_to_average[0].pose.utime;
     return avg_pose;
 }
