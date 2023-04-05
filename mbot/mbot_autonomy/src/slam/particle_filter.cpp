@@ -122,8 +122,8 @@ ParticleList ParticleFilter::resamplePosteriorDistribution(const OccupancyGrid *
         prior.push_back(posterior_[particleIdx]);
     }
 
-    std::cout << "<particle_filter.cpp>, resample not enabled\n";
-    prior = posterior_;
+    // std::cout << "<particle_filter.cpp>, resample not enabled\n";
+    // prior = posterior_;
 
     return prior;
 }

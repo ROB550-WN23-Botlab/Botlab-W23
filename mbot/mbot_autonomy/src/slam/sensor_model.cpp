@@ -33,18 +33,27 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
         Point<float> measuredOrigin = ray.origin;
         float measuredThetaInGlobal = ray.theta;
 
+         std::cout<<"<sensor_model.cpp>:\n";
+         std::cout<<"\tray range:"<<measuredRange<<"\n";
+         std::cout<<"\tray start point(:"<<measuredOrigin.x<<","<<measuredOrigin.y<<")\n";
+         std::cout<<"\tray global theta:"<<measuredThetaInGlobal<<"\n";
+
+
+
+
+
         // Get global positions
-        Point<float> f_end = global_position_to_grid_position(
-            Point<float>(
-                ray.origin.x + ray.range * std::cos(ray.theta),
-                ray.origin.y + ray.range * std::sin(ray.theta)),
-            map);
+        
 
         // Cells
         Point<int> start_cell = global_position_to_grid_cell(ray.origin, map);
-        Point<int> end_cell;
-        end_cell.x = static_cast<int>(f_end.x);
-        end_cell.y = static_cast<int>(f_end.y);
+        Point<int> end_cell = global_position_to_grid_cell(
+                                                            Point<double>(
+                                                                ray.origin.x + ray.range * std::cos(ray.theta),
+                                                                ray.origin.y + ray.range * std::sin(ray.theta)),
+                                                            map);
+        std::cout<<"\tray end cell(:"<<end_cell.x<<","<<end_cell.y<<")\n";
+
         std::vector<Point<int>> cells_touched;
 
         bool hitBeforeEnd = false;
@@ -92,6 +101,8 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
         
         if(hitBeforeEnd)
         {
+            std::cout<<"<sensor_model.cpp>:   ray from particle end before reach range,";
+            std::cout<<"should end:at cell("<<x1<<","<<y1<<") but at ("<<x<<","<<y<<")\n";
 
             // hit occurs at the cell just before end cell (at n-1 th cell)
             if(abs(x1-x)==1 || abs(y1-y)==1 && map.logOdds(x,y)>0)
@@ -116,6 +127,8 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
 
             else
             {
+                std::cout<<"<sensor_model.cpp>:   ray from particle will go over range";
+                std::cout<<"cell("<<x1<<","<<y1<<") log at range is:"<<map.logOdds(x1,y1)<<"\n";
                 // find the point just after end cell along ray
                 // Bresenham's Algorithm from (x1,y1) to (2*x1-x0,2*y1-y0)
                 Point<int> cellAfterEnd;
@@ -144,7 +157,7 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
 
 
     std::cout<<"<sensor_model.cpp>:   particle match map:"<< (1.0*numOfMatch/movingScan.size())<<"\n";
-    std::cout<<"likelihood"<<likelihood<<"\n";
+    std::cout<<"likelihood: "<<likelihood<<"\n";
 
 
 
