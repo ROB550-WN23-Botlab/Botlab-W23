@@ -34,7 +34,7 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t &odometry)
         moved = true;
     }
 
-    delta_angle1_ = angle_diff(atan2(dx_, dy_) , previousPose_.theta); // angle of rotation 1  // alpha
+    delta_angle1_ = angle_diff(atan2(dy_,dx_) , previousPose_.theta); // angle of rotation 1  // alpha
     delta_s_ = sqrt(dx_ * dx_ + dy_ * dy_);   // distance of trans 1
     delta_angle2_ = angle_diff(dtheta_ , delta_angle1_);               // angle of rotation 2  //delta_theta - alpha
 
