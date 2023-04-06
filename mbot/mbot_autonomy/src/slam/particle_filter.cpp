@@ -21,6 +21,15 @@ void ParticleFilter::initializeFilterAtPose(const mbot_lcm_msgs::pose_xyt_t &pos
     double sampleWeight = 1.0 / kNumParticles_;
     posteriorPose_ = pose;
     std::cout << "initial pose:(" << pose.x << "," << pose.y << "," << pose.theta << ")" << std::endl;
+    for(auto &&p : posterior_)
+    {
+        p.pose.x = pose.x;
+        p.pose.y = pose.y;
+        p.pose.theta = pose.theta;
+        p.pose.utime = pose.utime;
+        p.parent_pose = p.pose;
+        p.weight = sampleWeight;
+    }
 }
 
 void ParticleFilter::initializeFilterRandomly(const OccupancyGrid &map)
@@ -46,11 +55,20 @@ mbot_lcm_msgs::pose_xyt_t ParticleFilter::updateFilter(const mbot_lcm_msgs::pose
 {
     bool hasRobotMoved = actionModel_.updateAction(odometry);
 
-    auto prior = resamplePosteriorDistribution(&map);
-    auto proposal = computeProposalDistribution(prior);
-    posterior_ = computeNormalizedPosterior(proposal, laser, map);
-    // OPTIONAL TODO: Add reinvigoration step
-    posteriorPose_ = estimatePosteriorPose(posterior_);
+    if(hasRobotMoved)
+    {
+        std::cout<<"<particle_filter.cpp>:   updateFilter\n";
+        
+        auto prior = resamplePosteriorDistribution(&map);
+        printf("\tprior generated! size:%d\n",prior.size());
+        auto proposal = computeProposalDistribution(prior);
+        printf("\tproposal generated! size:%d\n",proposal.size());
+        posterior_ = computeNormalizedPosterior(proposal, laser, map);
+        printf("\tposterior_ generated! size:%d\n",posterior_.size());
+        // OPTIONAL TODO: Add reinvigoration step
+        posteriorPose_ = estimatePosteriorPose(posterior_);
+        printf("\tposteriorPose_ generated!:(%.3f,%.3f,%.3f)\n\n\n",posteriorPose_.x,posteriorPose_.y,posteriorPose_.theta);
+    }
     posteriorPose_.utime = odometry.utime;
 
     return posteriorPose_;
@@ -117,7 +135,13 @@ ParticleList ParticleFilter::resamplePosteriorDistribution(const OccupancyGrid *
         while (acw < u)
         {
             particleIdx++;
+            if(particleIdx>=kNumParticles_)
+            {
+                particleIdx-=kNumParticles_;
+            }
             acw += posterior_[particleIdx].weight;
+            std::cout<<"<particle_filter.cpp>:   resamplePosteriorDistribution\n";
+            printf("\taccumulated weight:%.3f\n",acw);
         }
         prior.push_back(posterior_[particleIdx]);
     }

@@ -22,6 +22,12 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t &odometry)
     ////////////// TODO: Implement code here to compute a new distribution of the motion of the robot ////////////////
 
     bool moved = 0;
+    if(!initialized_)
+    {
+        previousPose_ = odometry;
+        initialized_ = true;
+        std::cout<<"<action_model.cpp>:\taction model initialized!";
+    }
 
     
 
@@ -61,6 +67,7 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t &odometry)
 mbot_lcm_msgs::particle_t ActionModel::applyAction(const mbot_lcm_msgs::particle_t &sample)
 {
     ////////////// TODO: Implement your code for sampling new poses from the distribution computed in updateAction //////////////////////
+    
     // Make sure you create a new valid particle_t. Don't forget to set the new time and new parent_pose.
     mbot_lcm_msgs::particle_t newSample;
     mbot_lcm_msgs::pose_xyt_t curPose = sample.pose;
@@ -100,8 +107,13 @@ mbot_lcm_msgs::particle_t ActionModel::applyAction(const mbot_lcm_msgs::particle
 
     // std::cout<<"previous Pose("<<sample.pose.x<<","<<sample.pose.theta<<","<<sample.pose.x<<")";
     // std::cout<<"    new Pose("<<newSample.pose.x<<","<<newSample.pose.theta<<","<<newSample.pose.x<<")\n";
-    std::cout<<"<action_model.cpp: >:\n";
-    std::cout<<"particle pose("<<curPose.x<<","<<curPose.y<<","<<curPose.theta<<")\n==>\n";
-    std::cout<<"particle pose("<<newPose.x<<","<<newPose.y<<","<<newPose.theta<<")\n\n\n";
+    
+    
+    // std::cout<<"<action_model.cpp: >\t";
+    // std::cout<<"applyAction generate 1 particle:\n";
+    // printf("\t(%.3f,%.3f,%.3f)",newSample.parent_pose.x,newSample.parent_pose.y,newSample.parent_pose.theta);
+    // printf("==> (%.3f,%.3f,%.3f)\n",newSample.pose.x,newSample.pose.y,newSample.pose.theta);
+    // printf("\tparticle time: %d",newSample.pose.utime);
+    
     return newSample;
 }
