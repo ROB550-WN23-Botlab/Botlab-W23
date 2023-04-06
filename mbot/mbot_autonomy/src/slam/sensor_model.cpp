@@ -19,6 +19,14 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
     // printf("time recorded by odometry: %d ==> %d\n",sample.parent_pose.utime,sample.pose.utime);
     // printf("pose recorded by odometry: (%.3f,%.3f,%.3f) ==>",sample.parent_pose.x,sample.parent_pose.y,sample.parent_pose.theta);
     // printf("(%.3f,%.3f,%.3f)\n",sample.pose.x,sample.pose.y,sample.pose.theta);
+
+    // for(int i=0;i<map.widthInCells();i++)
+    // {
+    //     for(int j=0;i<map.heightInCells();j++)
+    //     {
+    //         printf("cell(%d,%d):%d  ",i,j,map.logOdds(i,j));
+    //     }
+    // }
     
 
     double likelihood = 0.0;
@@ -34,17 +42,21 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
     // count how many  ray from this particle match the map
     int numOfMatch=0;
 
-
+    // printf("\n<sensor_model.cpp>: map size:(%d,%d)\n",map.widthInCells(),map.heightInCells());
+    // printf("\t time: %d ==> %d\n",sample.parent_pose.utime,sample.pose.utime);
+    // printf("\t pose: (%.3f,%.3f,%.3f) ==>",sample.parent_pose.x,sample.parent_pose.y,sample.parent_pose.theta);
+    // printf("(%.3f,%.3f,%.3f)\n",sample.pose.x,sample.pose.y,sample.pose.theta);
+    // printf("\t lidar time: %d==>%d\n",scan.times[0],scan.times[scan.times.size()-1]);
     for(adjusted_ray_t ray : movingScan)
     {
         float measuredRange = ray.range;
         Point<float> measuredOrigin = ray.origin;
         float measuredThetaInGlobal = ray.theta;
 
-        //  std::cout<<"<sensor_model.cpp>:\n";
-        //  std::cout<<"\tray range:"<<measuredRange<<"\n";
-        //  std::cout<<"\tray start point(:"<<measuredOrigin.x<<","<<measuredOrigin.y<<")\n";
-        //  std::cout<<"\tray global theta:"<<measuredThetaInGlobal<<"\n";
+        // std::cout<<"<sensor_model.cpp>:\n";
+        // std::cout<<"\tray range:"<<measuredRange<<"\n";
+        // std::cout<<"\tray start point(:"<<measuredOrigin.x<<","<<measuredOrigin.y<<")\n";
+        // std::cout<<"\tray global theta:"<<measuredThetaInGlobal<<"\n";
 
 
 
@@ -54,6 +66,9 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
         
 
         // Cells
+
+
+        
         Point<int> start_cell = global_position_to_grid_cell(ray.origin, map);
         Point<int> end_cell = global_position_to_grid_cell(
                                                             Point<double>(
@@ -62,13 +77,21 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
                                                             map);
         // std::cout<<"\tray end cell(:"<<end_cell.x<<","<<end_cell.y<<")\n";
 
+
+        printf("\n<sensor_model.cpp>: ray info\n");
+        printf("\t (%.3f,%.3f) ==>",ray.origin.x,ray.origin.y);
+        printf("(%.3f,%.3f)\n",ray.origin.x + ray.range * std::cos(ray.theta),ray.origin.y + ray.range * std::sin(ray.theta));
+        printf("start_cell(%d,%d) ==> end_cell(%d,%d)\n",start_cell.x,start_cell.y,end_cell.x,end_cell.y);
+
         std::vector<Point<int>> cells_touched;
 
         bool hitBeforeEnd = false;
         Point<int> hitPoint;
         //////////////// Bresenham's Algorithm ////////////////
-        int y0 = start_cell.y;
         int x0 = start_cell.x;
+        int y0 = start_cell.y;
+        
+
         int x1 = end_cell.x;
         int y1 = end_cell.y;
 

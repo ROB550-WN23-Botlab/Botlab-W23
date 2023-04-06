@@ -95,7 +95,7 @@ mbot_lcm_msgs::pose_xyt_t ParticleFilter::updateFilterActionOnly(const mbot_lcm_
 
     posteriorPose_ = odometry;
 
-    std::cout << "<particle _filter.cpp>  pose:(" << posteriorPose_.x << "," << posteriorPose_.y << "," << posteriorPose_.theta << ")\n";
+    // std::cout << "<particle _filter.cpp>  pose:(" << posteriorPose_.x << "," << posteriorPose_.y << "," << posteriorPose_.theta << ")\n";
     // std::cout<<"robot moved:"<<hasRobotMoved<<std::endl;
     return posteriorPose_;
 }
@@ -140,8 +140,8 @@ ParticleList ParticleFilter::resamplePosteriorDistribution(const OccupancyGrid *
                 particleIdx-=kNumParticles_;
             }
             acw += posterior_[particleIdx].weight;
-            std::cout<<"<particle_filter.cpp>:   resamplePosteriorDistribution\n";
-            printf("\taccumulated weight:%.3f\n",acw);
+            // std::cout<<"<particle_filter.cpp>:   resamplePosteriorDistribution\n";
+            // printf("\taccumulated weight:%.3f\n",acw);
         }
         prior.push_back(posterior_[particleIdx]);
     }
@@ -170,6 +170,18 @@ ParticleList ParticleFilter::computeNormalizedPosterior(const ParticleList &prop
 {
     /////////// TODO: Implement your algorithm for computing the normalized posterior distribution using the
     ///////////       particles in the proposal distribution
+
+
+    // std::cout<<"<particle_filter.cpp>\n";
+    // for(int i=0;i<map.widthInCells();i++)
+    // {
+    //     for(int j=0;i<map.heightInCells();j++)
+    //     {
+    //         printf("cell(%d,%d):%d  ",i,j,map.logOdds(i,j));
+    //     }
+    // }
+    // printf("map cell size:(%d,%d)\n",map.widthInCells(),map.heightInCells());
+    
     ParticleList posterior;
     double weightSum = 0;
     for (mbot_lcm_msgs::particle_t p : proposal)

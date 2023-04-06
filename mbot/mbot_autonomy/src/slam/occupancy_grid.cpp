@@ -64,6 +64,8 @@ CellOdds OccupancyGrid::logOdds(int x, int y) const
     {
         return operator()(x, y);
     }
+
+    // printf("<occupancy_gird.cpp>: function logOdds: (%d,%d) is not in grid\n",x,y);
     
     return 0;
 }
