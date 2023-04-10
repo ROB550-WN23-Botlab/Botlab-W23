@@ -92,6 +92,8 @@ private:
     static const int NUM_OF_RESAMPLE = 11;
     static const int NUM_OF_SAMPLE = 1000;
 
+    
+
 };
 
 

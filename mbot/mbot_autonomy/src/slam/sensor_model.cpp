@@ -36,11 +36,13 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
     // fraction for end cell
     double fraction_endCell = 0.35;
 
+    // count how many  ray from this particle match the map
+    int numOfMatch=0;
+
     MovingLaserScan movingScan(scan, sample.parent_pose, sample.pose, ray_stride_);
     // TODO
 
-    // count how many  ray from this particle match the map
-    int numOfMatch=0;
+    
 
     // printf("\n<sensor_model.cpp>: map size:(%d,%d)\n",map.widthInCells(),map.heightInCells());
     // printf("\t time: %d ==> %d\n",sample.parent_pose.utime,sample.pose.utime);
@@ -78,10 +80,19 @@ double SensorModel::likelihood(const mbot_lcm_msgs::particle_t& sample,
         // std::cout<<"\tray end cell(:"<<end_cell.x<<","<<end_cell.y<<")\n";
 
 
-        printf("\n<sensor_model.cpp>: ray info\n");
-        printf("\t (%.3f,%.3f) ==>",ray.origin.x,ray.origin.y);
-        printf("(%.3f,%.3f)\n",ray.origin.x + ray.range * std::cos(ray.theta),ray.origin.y + ray.range * std::sin(ray.theta));
-        printf("start_cell(%d,%d) ==> end_cell(%d,%d)\n",start_cell.x,start_cell.y,end_cell.x,end_cell.y);
+        if(DO_PRINT_SENSOR_MODEL_DEBUG_MESSAGE)
+        {
+            printf("\n<sensor_model.cpp>: ray info\n");
+            printf("\t (%.3f,%.3f) ==>",ray.origin.x,ray.origin.y);
+            printf("(%.3f,%.3f)\n",ray.origin.x + ray.range * std::cos(ray.theta),ray.origin.y + ray.range * std::sin(ray.theta));
+            printf("\t map range (%.3f,%.3f) ==>(%.3f,%.3f)\n", map.originInGlobalFrame().x,
+                                                                map.originInGlobalFrame().y,
+                                                                map.originInGlobalFrame().x + map.widthInMeters(),
+                                                                map.originInGlobalFrame().y + map.heightInMeters());
+            printf("\t cell(%d,%d) ==> cell(%d,%d)\n",start_cell.x,start_cell.y,end_cell.x,end_cell.y);
+            printf("\t map cell size:(%d,%d)\n",map.widthInCells(),map.heightInCells());
+            printf("\t cellPerMeter:%.3f ,meterPerCell:%.3f\n",map.cellsPerMeter(),map.metersPerCell());
+        }
 
         std::vector<Point<int>> cells_touched;
 
