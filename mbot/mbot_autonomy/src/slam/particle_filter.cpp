@@ -9,7 +9,8 @@ ParticleFilter::ParticleFilter(int numParticles)
     : kNumParticles_(numParticles),
       samplingAugmentation(0.5, 0.9, numParticles),
       distribution_quality(1),
-      quality_reinvigoration_percentage(25)
+      quality_reinvigoration_percentage(25),
+      is_random_initialized_(false)
 {
     assert(kNumParticles_ > 1);
     posterior_.resize(kNumParticles_);
@@ -36,6 +37,7 @@ void ParticleFilter::initializeFilterRandomly(const OccupancyGrid &map)
 {
     ///////////// TODO: Implement your method for initializing the particles in the particle filter /////////////////
     double sampleWeight = 1.0 / kNumParticles_;
+    is_random_initialized_ = true;
     for (auto &&p : posterior_)
     {
         randomPoseGen.update_map(&map);
@@ -57,17 +59,44 @@ mbot_lcm_msgs::pose_xyt_t ParticleFilter::updateFilter(const mbot_lcm_msgs::pose
 
     if(hasRobotMoved)
     {
-        std::cout<<"<particle_filter.cpp>:   updateFilter\n";
         
-        auto prior = resamplePosteriorDistribution(&map);
-        printf("\tprior generated! size:%d\n",prior.size());
+        
+        //resample posterior at time t-1 to get prior at time t
+        auto prior = resamplePosteriorDistribution(&map); 
+       
+
+
+
+
         auto proposal = computeProposalDistribution(prior);
-        printf("\tproposal generated! size:%d\n",proposal.size());
+        
+
+
         posterior_ = computeNormalizedPosterior(proposal, laser, map);
-        printf("\tposterior_ generated! size:%d\n",posterior_.size());
+       
         // OPTIONAL TODO: Add reinvigoration step
         posteriorPose_ = estimatePosteriorPose(posterior_);
-        printf("\tposteriorPose_ generated!:(%.3f,%.3f,%.3f)\n\n\n",posteriorPose_.x,posteriorPose_.y,posteriorPose_.theta);
+        
+
+    
+        if(PARTICLE_FILTER_PRINT_DEBUG_MESSAGE_)
+        {
+            std::cout<<"<particle_filter.cpp>:   updateFilter\n";
+
+
+            printf("\tresample finished, prior particles generated\n");
+            mbot_lcm_msgs::pose_xyt_t priorCP = computeParticlesAverage(prior);
+            printf("\t\tprior particle mean:(%.6f,%.6f,%.6f)\n",priorCP.x,priorCP.y,priorCP.theta);
+
+
+            printf("\tapply action finished, proposal particles generated\n",proposal.size());
+            mbot_lcm_msgs::pose_xyt_t proposalCP = computeParticlesAverage(proposal);
+            printf("\t\tproposal particle mean:(%.6f,%.6f,%.6f)\n",proposalCP.x,proposalCP.y,proposalCP.theta);
+
+            printf("\tsensor model finished, posterior particles generated!\n",posterior_.size());
+            printf("\t\tposteriorPose_ weighted mean:(%.3f,%.3f,%.3f)\n\n\n",posteriorPose_.x,posteriorPose_.y,posteriorPose_.theta);
+        }
+    
     }
     posteriorPose_.utime = odometry.utime;
 
@@ -87,16 +116,10 @@ mbot_lcm_msgs::pose_xyt_t ParticleFilter::updateFilterActionOnly(const mbot_lcm_
         auto proposal = computeProposalDistribution(prior);
         posterior_ = proposal;
 
-        // for(mbot_lcm_msgs::particle_t p : posterior_)
-        // {
-        //     std::cout<<"prior particle:("<<p.pose.x<<","<<p.pose.y<<","<<p.pose.y<<","<<p.pose.theta<<")\n";
-        // }
     }
 
     posteriorPose_ = odometry;
 
-    // std::cout << "<particle _filter.cpp>  pose:(" << posteriorPose_.x << "," << posteriorPose_.y << "," << posteriorPose_.theta << ")\n";
-    // std::cout<<"robot moved:"<<hasRobotMoved<<std::endl;
     return posteriorPose_;
 }
 
@@ -116,51 +139,67 @@ mbot_lcm_msgs::particles_t ParticleFilter::particles(void) const
 ParticleList ParticleFilter::resamplePosteriorDistribution(const OccupancyGrid *map)
 {
     //////////// TODO: Implement your algorithm for resampling from the posterior distribution ///////////////////
-    ParticleList prior;
+    // ParticleList prior;
 
-    // low variance sampler
+    double Neff;
+    double temp = 0;
+    double sampleWeight = 1.0/kNumParticles_;
+    int Nrein;
+    if(is_random_initialized_)
+        Nrein = (int)kNumParticles_*quality_reinvigoration_percentage;
+    else
+        Nrein = 0;
+    ParticleList prior = posterior_;
+
     std::random_device rd;
-    std::mt19937 gen(rd());
-
-    std::uniform_real_distribution<double> rSampler(0, 1.0 / kNumParticles_);
-
-    double r = rSampler(gen);
-
-    int particleIdx = 0;
-    double acw = posterior_[0].weight; // accumulate weight
-
-    for (int i = 0; i < kNumParticles_; i++)
+    std::mt19937 generator(rd());
+    std::uniform_real_distribution<double> dist(0.0, 1.0 / kNumParticles_);
+    double r = dist(generator);
+    int count = 0;
+    double c = posterior_[0].weight;
+    
+    // do low variance resample
+    for(int i=0; i<kNumParticles_;i++)
     {
-        double u = r + (1.0 * i) / kNumParticles_; // make sure we are using "double" in fraction
-        while (acw < u)
+        double u = r + (double)i*1.0/kNumParticles_;
+        while (u>c)
         {
-            particleIdx++;
-            if(particleIdx>=kNumParticles_)
-            {
-                particleIdx-=kNumParticles_;
-            }
-            acw += posterior_[particleIdx].weight;
-            // std::cout<<"<particle_filter.cpp>:   resamplePosteriorDistribution\n";
-            // printf("\taccumulated weight:%.3f\n",acw);
+            count++;
+            c += posterior_[count].weight;
         }
-        prior.push_back(posterior_[particleIdx]);
+        prior[i] = posterior_[count];
+        prior[i].weight = sampleWeight;
     }
+        
+    
+    if(samplingAugmentation.sample_randomly()){
+        randomPoseGen.update_map(map);
+        std::random_shuffle(prior.begin(), prior.end());
+        for(int i=0; i<Nrein; i++){
+            prior[i] = randomPoseGen.get_particle();
+            prior[i].weight = sampleWeight;
+        }
+        std::cout << "reinvigorate.\n";
+    }
+    // std::cout << "Particles resampled\n";    
 
-    // std::cout << "<particle_filter.cpp>, resample not enabled\n";
-    // prior = posterior_;
 
     return prior;
 }
+
+
 
 ParticleList ParticleFilter::computeProposalDistribution(const ParticleList &prior)
 {
     //////////// TODO: Implement your algorithm for creating the proposal distribution by sampling from the ActionModel
     ParticleList proposal;
 
-    for (auto &p : prior)
+    for (mbot_lcm_msgs::particle_t p : prior)
     {
-        proposal.push_back(actionModel_.applyAction(p));
+        mbot_lcm_msgs::particle_t particleAfterAction = actionModel_.applyAction(p);
+        proposal.push_back(particleAfterAction);
     }
+    // printf("action model finish: %ld prior particle ==> %ld proposal particle\n\n\n",prior.size(),proposal.size());
     return proposal;
 }
 
@@ -172,15 +211,6 @@ ParticleList ParticleFilter::computeNormalizedPosterior(const ParticleList &prop
     ///////////       particles in the proposal distribution
 
 
-    // std::cout<<"<particle_filter.cpp>\n";
-    // for(int i=0;i<map.widthInCells();i++)
-    // {
-    //     for(int j=0;i<map.heightInCells();j++)
-    //     {
-    //         printf("cell(%d,%d):%d  ",i,j,map.logOdds(i,j));
-    //     }
-    // }
-    // printf("map cell size:(%d,%d)\n",map.widthInCells(),map.heightInCells());
     
     ParticleList posterior;
     double weightSum = 0;
@@ -191,6 +221,11 @@ ParticleList ParticleFilter::computeNormalizedPosterior(const ParticleList &prop
         posterior.push_back(p);
     }
 
+    assert(weightSum>0.01);
+
+    printf("weight sum: %.3f\n\n\n",weightSum);
+    
+
     for (mbot_lcm_msgs::particle_t p_ : posterior)
     {
         p_.weight /= weightSum;
@@ -199,11 +234,49 @@ ParticleList ParticleFilter::computeNormalizedPosterior(const ParticleList &prop
     return posterior;
 }
 
+
 mbot_lcm_msgs::pose_xyt_t ParticleFilter::estimatePosteriorPose(const ParticleList &posterior)
 {
     //////// TODO: Implement your method for computing the final pose estimate based on the posterior distribution
+    // posterior must be normalized (weightSum = 1)
+
+    struct particle_t_comparator
+    {
+        bool operator() (mbot_lcm_msgs::particle_t i,mbot_lcm_msgs::particle_t j) { return (i.weight > j.weight);}
+    };
+    
     mbot_lcm_msgs::pose_xyt_t pose;
-    pose = computeParticlesAverage(posterior); // posterior must be normalized (weightSum = 1)
+
+    double percentage = 0.05; // 0.2
+    particle_t_comparator comparator;
+    ParticleList posterior_sorted = posterior;
+    std::sort(posterior_sorted.begin(), posterior_sorted.end(), comparator);
+
+    // std::cout<<" some simple test" << (posterior_sorted[0].weight >= posterior_sorted[1].weight) << std::endl;
+
+    double xMean = 0.0;
+    double yMean = 0.0;
+    double cosThetaMean = 0.0;
+    double sinThetaMean = 0.0;
+    double totalWeight = 0.0;
+    int idx = 0;
+    // using best percentage particles
+    for(auto& p : posterior_sorted){
+        if (idx > static_cast<int>(posterior_sorted.size() * percentage))
+            break;
+        xMean +=p.weight * p.pose.x;
+        yMean +=p.weight * p.pose.y;
+        cosThetaMean += p.weight*std::cos(p.pose.theta);
+        sinThetaMean += p.weight*std::sin(p.pose.theta);
+        totalWeight += p.weight;
+        idx++;
+    }
+
+    pose.x = xMean / totalWeight;
+    pose.y = yMean / totalWeight;
+    pose.theta = std::atan2(sinThetaMean, cosThetaMean);
+    
+    std::cout << "Mean pose calculated.\n"<<" "<<pose.x<<" " << pose.y <<" "<< pose.theta << std::endl;
     return pose;
 }
 
@@ -211,15 +284,24 @@ mbot_lcm_msgs::pose_xyt_t ParticleFilter::computeParticlesAverage(const Particle
 {
     //////// TODO: Implement your method for computing the average of a pose distribution
     mbot_lcm_msgs::pose_xyt_t avg_pose;
-    avg_pose.x = 0;
-    avg_pose.y = 0;
-    avg_pose.theta = 0;
+    long double xSum = 0;
+    long double ySum = 0;
+    long double thetaSum = 0;
+
+    long double weightSum = 0;
     for (mbot_lcm_msgs::particle_t p : particles_to_average)
     {
-        avg_pose.x += p.pose.x * p.weight;
-        avg_pose.y += p.pose.y * p.weight;
-        avg_pose.theta += p.pose.theta * p.weight;
+        assert(p.weight>0);
+        assert(p.weight<1);
+        xSum += (p.pose.x * p.weight);
+        ySum += (p.pose.y * p.weight);
+        thetaSum += (p.pose.theta * p.weight);
+        weightSum += p.weight;
     }
+    assert(weightSum<1.05);
     avg_pose.utime = particles_to_average[0].pose.utime;
+    avg_pose.x = float(xSum);
+    avg_pose.y = float(ySum);
+    avg_pose.theta = float(thetaSum);
     return avg_pose;
 }

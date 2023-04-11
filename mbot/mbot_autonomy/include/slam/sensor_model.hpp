@@ -16,6 +16,8 @@ struct particle_t;
 #include <random>
 
 
+const bool DO_PRINT_SENSOR_MODEL_DEBUG_MESSAGE = false;
+
 /**
 * SensorModel implement a sensor model for computing the likelihood that a laser scan was measured from a
 * provided pose, give a map of the environment.

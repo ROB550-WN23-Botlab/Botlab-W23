@@ -15,6 +15,8 @@
 
 typedef std::vector<mbot_lcm_msgs::particle_t> ParticleList;
 
+const bool PARTICLE_FILTER_PRINT_DEBUG_MESSAGE_ = true;
+
 /**
 * ParticleFilter implements a standard SIR-based particle filter. The set of particles is initialized at some pose. Then
 * on subsequent calls to updateFilter, a new pose estimate is computed using the latest odometry and laser measurements
@@ -95,7 +97,7 @@ private:
     float quality_reinvigoration_percentage;
 
     int kNumParticles_;         // Number of particles to use for estimating the pose
-
+    bool is_random_initialized_;
     ParticleList resamplePosteriorDistribution(const OccupancyGrid* map = nullptr);
     ParticleList computeProposalDistribution(const ParticleList& prior);
     ParticleList computeNormalizedPosterior(const ParticleList& proposal,
