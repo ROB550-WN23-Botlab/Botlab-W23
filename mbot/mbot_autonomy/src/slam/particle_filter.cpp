@@ -200,7 +200,7 @@ ParticleList ParticleFilter::computeProposalDistribution(const ParticleList &pri
         proposal.push_back(particleAfterAction);
     }
     // printf("action model finish: %ld prior particle ==> %ld proposal particle\n\n\n",prior.size(),proposal.size());
-    return proposal;
+    return proposal;                                           
 }
 
 ParticleList ParticleFilter::computeNormalizedPosterior(const ParticleList &proposal,
