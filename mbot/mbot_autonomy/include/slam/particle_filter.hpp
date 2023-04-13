@@ -12,6 +12,11 @@
 #include <slam/occupancy_grid.hpp>
 #include <slam/sensor_model.hpp>
 #include <slam/action_model.hpp>
+// #include <angle_functions.hpp>
+#include <common_utils/geometric/angle_functions.hpp>
+
+// Controls the percentage of particles to average for posterior pose estimation.
+#define PERCENT_PARTICLES_TO_AVERAGE 0.20
 
 typedef std::vector<mbot_lcm_msgs::particle_t> ParticleList;
 
@@ -96,30 +101,40 @@ private:
 
     int kNumParticles_;         // Number of particles to use for estimating the pose
 
+    // Used to get a pseudo-random seed for the random bit generator.
+    std::random_device rand_device_;
+    // The random bit generator used in the Mersenne Twister
+    std::default_random_engine generator_;
+
     ParticleList resamplePosteriorDistribution(const OccupancyGrid* map = nullptr);
     ParticleList computeProposalDistribution(const ParticleList& prior);
     ParticleList computeNormalizedPosterior(const ParticleList& proposal,
                                             const mbot_lcm_msgs::lidar_t& laser,
                                             const OccupancyGrid& map);
+
+    // I believe particle reinvigoration should be done in the resampling of the posterior step.
+    // Opting to get rid of this function for now.
+    // void reinvigoratePosterior();
+
     mbot_lcm_msgs::pose_xyt_t estimatePosteriorPose(const ParticleList& posterior);
     mbot_lcm_msgs::pose_xyt_t computeParticlesAverage(const ParticleList& particles_to_average);
 
-    
+
     /**
      * @brief Used to track averages for augmenting MCL sampling with a randomness.
      *      Refer to the probabilistic robotics book section table 8.3 for more details.
      */
     class SamplingAugmentation{
-      public: 
+      public:
         SamplingAugmentation(float slow_rate, float fast_rate, int num_particles)
-        :   slow_rate(slow_rate), fast_rate(fast_rate), 
+        :   slow_rate(slow_rate), fast_rate(fast_rate),
             slow_average_weight(1/num_particles), fast_average_weight(1/num_particles),
             generator(std::random_device()()), uniform_distribution(0.0, 1.0),
             rand_sample_prob(0)
         { }
-        
+
         bool sample_randomly()
-        { 
+        {
             return uniform_distribution(generator) < rand_sample_prob;
         }
 
@@ -138,7 +153,7 @@ private:
         std::uniform_real_distribution<double> uniform_distribution;
 
 
-    } 
+    }
     samplingAugmentation;
 
 
@@ -172,9 +187,9 @@ private:
 
         mbot_lcm_msgs::pose_xyt_t get_pose()
         {
-            if (map == nullptr) 
+            if (map == nullptr)
             { throw std::runtime_error("Invalid map in particle filter's random sampler...");  }
-            
+
             double rand_x, rand_y;
             for (int i; i < max_attempts; i++)
             {
@@ -216,6 +231,74 @@ private:
         std::uniform_real_distribution<double> distr_x, distr_y, distr_theta;
     }
     randomPoseGen;
+
+    // For normal sampling of poses given a pose (that is set to the Gaussian's mean) 
+    class GaussianPoseSampler
+    {
+    public:
+        GaussianPoseSampler(double const std_dev_position, double const std_dev_angle)
+            : std_dev_position_(std_dev_position),
+              std_dev_theta_(std_dev_angle),
+              avg_pose_(),
+              random_device_(),
+              random_engine_(random_device_())
+        {}
+
+        // Provides the average pose (the means for the three Gaussians we're sampling from)
+        void insert_average_pose(mbot_lcm_msgs::pose_xyt_t avg_pose)
+        {
+            avg_pose_ = avg_pose;
+            distr_x_ = std::normal_distribution<double>(avg_pose_.x, std_dev_position_);
+            distr_y_ = std::normal_distribution<double>(avg_pose_.y, std_dev_position_);
+            distr_theta_ = std::normal_distribution<double>(avg_pose_.theta, std_dev_theta_);
+        }
+
+        // Samples a random pose from the distribution around the inserted average pose.
+        mbot_lcm_msgs::pose_xyt_t sample_pose()
+        {
+            // Sample the new pose variables.
+            double const sampled_x = distr_x_(random_engine_);
+            double const sampled_y = distr_y_(random_engine_);
+            // Need to wrap the sampled angle!
+            double const sampled_theta = wrap_to_pi(distr_theta_(random_engine_));
+
+            // Construct the pose
+            mbot_lcm_msgs::pose_xyt_t sampled_pose;
+            sampled_pose.x = sampled_x;
+            sampled_pose.y = sampled_y;
+            sampled_pose.theta = sampled_theta;
+            sampled_pose.utime = avg_pose_.utime;
+            
+            return sampled_pose;
+        }
+
+        // Used for getting a random particle given the average pose inserted with 
+        // insert_average_pose() method.
+        mbot_lcm_msgs::particle_t sample_particle()
+        {
+            mbot_lcm_msgs::particle_t sampled_particle;
+            sampled_particle.parent_pose = avg_pose_;
+            sampled_particle.pose = sample_pose();
+            sampled_particle.weight = 0.0;
+            return sampled_particle;
+        }
+
+    private:
+        double const std_dev_position_;  // m.
+        double const std_dev_theta_;  // Radians^2.
+        
+        // The pose describing the means of the Gaussians
+        mbot_lcm_msgs::pose_xyt_t avg_pose_;  
+
+        std::normal_distribution<double> distr_x_;
+        std::normal_distribution<double> distr_y_;
+        std::normal_distribution<double> distr_theta_;
+
+        std::random_device random_device_;
+        std::default_random_engine random_engine_;
+
+    } gaussian_pose_sampler;
+
 };
 
 #endif // SLAM_PARTICLE_FILTER_HPP

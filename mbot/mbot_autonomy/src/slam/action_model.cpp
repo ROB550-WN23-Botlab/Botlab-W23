@@ -31,7 +31,6 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t& odometry)
 {
     ////////////// DONE - TODO: Implement code here to compute a new distribution of the motion of the robot ////////////////
     bool moved = 0;
-    return moved;
     if(!initialized_)
     {
         previousPose_ = odometry;
