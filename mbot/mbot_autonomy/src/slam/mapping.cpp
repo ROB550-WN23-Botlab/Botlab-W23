@@ -44,6 +44,7 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t &scan,
         if(numOfCell<=1)
         {
             printf("bresenham get wrong result, %d cells are touched\n",numOfCell);
+            printf("\tcell:(%d,%d)\n",cells_touched[0].x,cells_touched[0].y);
             return;
         }
 
