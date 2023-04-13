@@ -1,3 +1,3 @@
 source ~/botlab-w23/system_compilation/setenv.sh
 # lcm-logplayer-gui ~/botlab-data/Original_logs/drive_square_10mx10m_5cm.log
-lcm-logplayer-gui /home/pi/botlab-w23/my_lcm_log_empty.log
+lcm-logplayer-gui /home/pi/botlab-w23/data/414348.log

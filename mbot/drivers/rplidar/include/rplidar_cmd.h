@@ -299,3 +299,4 @@ typedef struct _rplidar_response_device_health_t {
 #if defined(_WIN32)
 #pragma pack()
 #endif
+

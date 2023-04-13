@@ -14,7 +14,7 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t &scan,
                         const mbot_lcm_msgs::pose_xyt_t &pose,
                         OccupancyGrid &map)
 {
-    printf("in Mapping::updateMap \n");
+    // printf("in Mapping::updateMap \n");
 
     //////////////// TODO: Implement your occupancy grid algorithm here ///////////////////////
     if (!initialized_)
@@ -63,14 +63,14 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t &scan,
         //this cell is occupied
         Point<int> occupiedCell = cells_touched[numOfCell -1];
         int newLogVal =  map.logOdds(occupiedCell.x, occupiedCell.y) + kHitOdds_ ;
-        printf("cell(%d,%d) is occupied, val: %d ==> %d\n",occupiedCell.x,occupiedCell.y,map.logOdds(occupiedCell.x, occupiedCell.y),newLogVal);
+        // printf("cell(%d,%d) is occupied, val: %d ==> %d\n",occupiedCell.x,occupiedCell.y,map.logOdds(occupiedCell.x, occupiedCell.y),newLogVal);
         map.setLogOdds(occupiedCell.x, occupiedCell.y, clipLogVal(newLogVal));
 
-        printf("ray finished!\n\n");
+        // printf("ray finished!\n\n");
 
 
     }
-    printf("all ray in ray scan is finished!\n\n");
+    // printf("all ray in ray scan is finished!\n\n");
     previousPose_ = pose;
     return;
 }
@@ -133,7 +133,7 @@ std::vector<Point<int>> Mapping::bresenham(const adjusted_ray_t &ray, const Occu
         }
     }
     cells_touched.push_back(Point<int>(x1, y1)); // the last point is occupied, while prvious are free
-    printf("%d cell are touched in this ray\n",int(cells_touched.size()));
+    // printf("%d cell are touched in this ray\n",int(cells_touched.size()));
     return cells_touched;
     
 }
