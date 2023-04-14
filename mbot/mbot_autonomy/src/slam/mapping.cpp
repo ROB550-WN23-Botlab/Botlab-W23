@@ -28,61 +28,90 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t &scan,
 
     for (adjusted_ray_t ray : movingScan)
     {
-        // std::vector<int> inverseModelVal = Mapping::crudeInverseSensorModel(ray, map);
-        // for (int i = 0; i < map.widthInCells(); i++)
-        // {
-        //     for (int j = 0; j < map.heightInCells(); j++)
-        //     {
-        //         int idx = i * map.widthInCells() + j;
-        //         map.setLogOdds(i, j, map.logOdds(i, j) + inverseModelVal[idx] - L_0);
-        //         // printf("cell (%d,%d): %d\n",i,j,map.logOdds(i,j));
-        //     }
-        // }
-
+        
         std::vector<Point<int>> cells_touched = bresenham(ray, map);
         int numOfCell = cells_touched.size();
         if(numOfCell<=1)
         {
             printf("bresenham get wrong result, %d cells are touched\n",numOfCell);
             printf("\tcell:(%d,%d)\n",cells_touched[0].x,cells_touched[0].y);
-            return;
+            continue;
         }
 
-
-        //these cell are free
+        scoreEndpoint(ray,map,cells_touched);
+        scoreRay(ray,map,cells_touched);
+        // //these cell are free
         
-        for(int cellIdx = 0; cellIdx < numOfCell -1; cellIdx++)
-        {
-            Point<int> cellToSet = cells_touched[cellIdx];
+        // for(int cellIdx = 0; cellIdx < numOfCell -1; cellIdx++)
+        // {
+        //     Point<int> cellToSet = cells_touched[cellIdx];
             
-            int newLogVal =  map.logOdds(cellToSet.x, cellToSet.y) - kMissOdds_ ;
-            // printf("cell(%d,%d) is free, val: %d ==> %d\n",cellToSet.x,cellToSet.y,map.logOdds(cellToSet.x, cellToSet.y),newLogVal);
-            map.setLogOdds(cellToSet.x, cellToSet.y, clipLogVal(newLogVal));
-        }
+        //     int newLogVal =  map.logOdds(cellToSet.x, cellToSet.y) - kMissOdds_ ;
+        //     // printf("cell(%d,%d) is free, val: %d ==> %d\n",cellToSet.x,cellToSet.y,map.logOdds(cellToSet.x, cellToSet.y),newLogVal);
+        //     map.setLogOdds(cellToSet.x, cellToSet.y, clipLogVal(newLogVal));
+        // }
 
-        //this cell is occupied
-        Point<int> occupiedCell = cells_touched[numOfCell -1];
-        int newLogVal =  map.logOdds(occupiedCell.x, occupiedCell.y) + kHitOdds_ ;
-        // printf("cell(%d,%d) is occupied, val: %d ==> %d\n",occupiedCell.x,occupiedCell.y,map.logOdds(occupiedCell.x, occupiedCell.y),newLogVal);
-        map.setLogOdds(occupiedCell.x, occupiedCell.y, clipLogVal(newLogVal));
+        // //this cell is occupied
+        // Point<int> occupiedCell = cells_touched[numOfCell -1];
+        // int newLogVal =  map.logOdds(occupiedCell.x, occupiedCell.y) + kHitOdds_ ;
+        // // printf("cell(%d,%d) is occupied, val: %d ==> %d\n",occupiedCell.x,occupiedCell.y,map.logOdds(occupiedCell.x, occupiedCell.y),newLogVal);
+        // map.setLogOdds(occupiedCell.x, occupiedCell.y, clipLogVal(newLogVal));
 
-        // printf("ray finished!\n\n");
+        // // printf("ray finished!\n\n");
+
+
 
 
     }
-    // printf("all ray in ray scan is finished!\n\n");
+
     previousPose_ = pose;
     return;
 }
 
-void Mapping::scoreEndpoint(const adjusted_ray_t &ray, OccupancyGrid &map)
+void Mapping::scoreEndpoint(const adjusted_ray_t &ray, OccupancyGrid &map, std::vector<Point<int>> cells_touched)
 {
     //////////////// TODO: Implement your endpoint score ///////////////////////
+    if(ray.range <= kMaxLaserDistance_ && cells_touched.size()>1)
+    {
+        Point<int> endCell = cells_touched[cells_touched.size()-1];
+        if(map.isCellInGrid(endCell.x,endCell.y))
+        {
+            if(map.logOdds(endCell.x,endCell.y) + kHitOdds_ <127)
+            {
+                map.setLogOdds(endCell.x,
+                               endCell.y,
+                               map.logOdds(endCell.x,endCell.y)+kHitOdds_);
+            }
+            else
+            {
+                map.setLogOdds(endCell.x,endCell.y,127);
+            }
+        }
+    }
 }
 
-void Mapping::scoreRay(const adjusted_ray_t &ray, OccupancyGrid &map)
+void Mapping::scoreRay(const adjusted_ray_t &ray, OccupancyGrid &map, std::vector<Point<int>> cells_touched)
 {
     //////////////// TODO: Implement your ray score ///////////////////////
+    for(int cellIdx = 0; cellIdx < (cells_touched.size()-1); cellIdx++)
+    {
+        Point<int> emptyCell = cells_touched[cellIdx];
+
+        if(map.isCellInGrid(emptyCell.x,emptyCell.y))
+        {
+            if(map.logOdds(emptyCell.x,emptyCell.y) - kMissOdds_ > -127)
+            {
+                map.setLogOdds(emptyCell.x,
+                               emptyCell.y,
+                               map.logOdds(emptyCell.x,emptyCell.y)- kMissOdds_);
+            }
+            else
+            {
+                map.setLogOdds(emptyCell.x,emptyCell.y,-127);
+            }
+        }
+
+    }
 }
 
 /*

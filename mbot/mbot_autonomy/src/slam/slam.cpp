@@ -300,17 +300,6 @@ void OccupancyGridSLAM::updateLocalization(void)
         }
         else
         {
-            // std::cout<<"<slam.cpp>\n";
-            // printf("map cell size:(%d,%d)\n",map_.widthInCells(),map_.heightInCells());
-            // for(int i=0;i<map_.widthInCells();i++)
-            // {
-            //     for(int j=0;j<map_.heightInCells();j++)
-            //     {
-            //         if(map_.logOdds(i,j)!=0)
-            //             {printf("(%d,%d):%d  ",i,j,map_.logOdds(i,j));}
-            //     }
-            // }
-            // printf("map print finished!\n\n\n");
 
             currentPose_ = filter_.updateFilter(currentOdometry_, currentScan_, map_);
         }

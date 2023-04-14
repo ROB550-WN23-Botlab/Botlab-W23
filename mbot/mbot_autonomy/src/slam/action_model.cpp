@@ -7,7 +7,7 @@
 #include <algorithm>
 
 ActionModel::ActionModel(void)
-    : k1_(0.01f), k2_(0.01f), min_dist_(0.0025), min_theta_(0.02), initialized_(false)
+    : k1_(0.02f), k2_(0.001f), min_dist_(0.0025), min_theta_(0.02), initialized_(false)
 {
     //////////////// TODO: Handle any initialization for your ActionModel /////////////////////////
     std::random_device rd;

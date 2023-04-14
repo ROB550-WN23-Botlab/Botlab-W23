@@ -24,7 +24,10 @@ MovingLaserScan::MovingLaserScan(const mbot_lcm_msgs::lidar_t& scan,
             if(scan.ranges[n] > 0.1f) //all ranges less than a robot radius are invalid
             {
                 // TODO: Do something about those ranges that are equal to the maximum value (assumed 5.5)
-                // if (scan.ranges[n] > 5.5f) continue;
+                if (scan.ranges[n] > 5.5f) 
+                {
+                    continue;
+                }
 
                 mbot_lcm_msgs::pose_xyt_t rayPose = interpolate_pose_by_time(scan.times[n], beginPose, endPose);
 

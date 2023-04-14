@@ -247,7 +247,7 @@ mbot_lcm_msgs::pose_xyt_t ParticleFilter::estimatePosteriorPose(const ParticleLi
     
     mbot_lcm_msgs::pose_xyt_t pose;
 
-    double percentage = 0.05; // 0.2
+    double percentage = 0.05; // 0.05
     particle_t_comparator comparator;
     ParticleList posterior_sorted = posterior;
     std::sort(posterior_sorted.begin(), posterior_sorted.end(), comparator);

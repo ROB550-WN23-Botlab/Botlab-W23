@@ -70,8 +70,8 @@ private:
     
     bool initialized_;
     mbot_lcm_msgs::pose_xyt_t previousPose_;
-    void scoreEndpoint(const adjusted_ray_t& ray, OccupancyGrid& map);
-    void scoreRay(const adjusted_ray_t& ray, OccupancyGrid& map);
+    void scoreEndpoint(const adjusted_ray_t& ray, OccupancyGrid& map, std::vector<Point<int>> cells_touched);
+    void scoreRay(const adjusted_ray_t& ray, OccupancyGrid& map,std::vector<Point<int>> cells_touched);
     std::vector<Point<int>> bresenham(const adjusted_ray_t& ray, const OccupancyGrid& map);
     std::vector<Point<int>> divideAndStepAlongRay(const adjusted_ray_t& ray, const OccupancyGrid& map);
     int clipLogVal(int valToSet);
