@@ -11,7 +11,7 @@ mbot_lcm_msgs::robot_path_t search_for_path(mbot_lcm_msgs::pose_xyt_t start,
 {
     cell_t goalCell = global_position_to_grid_cell(Point<double>(goal.x, goal.y), distances);
      ////////////////// TODO: Implement your A* search here //////////////////////////
-   cell_t goalCell = global_position_to_grid_cell(Point<double>(goal.x, goal.y), distances);
+    cell_t goalCell = global_position_to_grid_cell(Point<double>(goal.x, goal.y), distances);
     cell_t startCell = global_position_to_grid_cell(Point<double>(start.x, start.y), distances);
     Node* goalNode = new Node(goalCell.x, goalCell.y);
     Node* startNode = new Node(startCell.x, startCell.y);
@@ -151,8 +151,35 @@ std::vector<Node*> extract_node_path(Node* goal_node, Node* start_node)
 std::vector<mbot_lcm_msgs::pose_xyt_t> extract_pose_path(std::vector<Node*> nodes, const ObstacleDistanceGrid& distances)
 {
     // TODO: prune the path to generate sparse waypoints
-    std::vector<mbot_lcm_msgs::pose_xyt_t> path;
-    return path;
+    std::vector<mbot_lcm_msgs::pose_xyt_t> posePath;
+    int count = 0;
+    int N = nodes.size();
+    for(auto &&node : nodes){
+        
+        Point<double> global_pose = grid_position_to_global_position(node->cell, distances);
+        mbot_lcm_msgs::pose_xyt_t currPose;
+        currPose.x = global_pose.x;
+        currPose.y = global_pose.y;
+
+        if(posePath.size() == 0)
+        {
+            currPose.theta = 0;
+        }
+        else
+        {
+            if(count == N-1)
+                {currPose.theta = 0;}
+            else
+            {
+                mbot_lcm_msgs::pose_xyt_t prevPose = posePath.back();
+                currPose.theta = atan2(currPose.y -  prevPose.y, currPose.x - prevPose.x);
+            }
+        }
+        count++;
+        currPose.utime = 0;
+        posePath.push_back(currPose);
+    }
+    return posePath;
 }
 
 bool is_in_list(Node* node, std::vector<Node*> list)
