@@ -11,7 +11,6 @@ mbot_lcm_msgs::robot_path_t search_for_path(mbot_lcm_msgs::pose_xyt_t start,
 {
     cell_t goalCell = global_position_to_grid_cell(Point<double>(goal.x, goal.y), distances);
     ////////////////// TODO: Implement your A* search here //////////////////////////
-    cell_t goalCell = global_position_to_grid_cell(Point<double>(goal.x, goal.y), distances);
     cell_t startCell = global_position_to_grid_cell(Point<double>(start.x, start.y), distances);
     Node *goalNode = new Node(goalCell.x, goalCell.y);
     Node *startNode = new Node(startCell.x, startCell.y);
@@ -105,23 +104,24 @@ double g_cost(Node *from, Node *goal, const ObstacleDistanceGrid &distances, con
     return g_cost;
 }
 
-void expand_node(Node *node, Node *goalNode, const ObstacleDistanceGrid &distances, const SearchParams &params, PriorityQueue &openList, std::vector<Node *> &closedList, std::vector<Node *> &searchedList)
+
+void expand_node(Node* node, Node* goalNode, const ObstacleDistanceGrid& distances, const SearchParams& params, PriorityQueue& openList, std::vector<Node*>& closedList, std::vector<Node*>& searchedList)
 {
     // TODO: Return children of a given node that are not obstacles
     int dx[8] = {1, -1, 0, 0, 1, -1, 1, -1};
     int dy[8] = {0, 0, 1, -1, 1, 1, -1, -1};
 
-    for (int i = 0; i < 8; i++)
+    for(int i=0; i<8; i++)
     {
         int x = node->cell.x + dx[i];
         int y = node->cell.y + dy[i];
-        Node *neighbor = new Node(x, y);
-        if (is_in_list(neighbor, searchedList))
+        Node* neighbor = new Node(x,y);
+        if(is_in_list(neighbor, searchedList))
             neighbor = get_from_list(neighbor, searchedList);
-
-        if (!is_in_list(neighbor, closedList) && distances.isCellInGrid(x, y) && distances(x, y) > params.minDistanceToObstacle)
+        
+        if(!is_in_list(neighbor, closedList) && distances.isCellInGrid(x, y) && distances(x, y) > params.minDistanceToObstacle)
         {
-            if (!is_in_list(neighbor, searchedList))
+            if(!is_in_list(neighbor, searchedList))
             {
                 neighbor->g_cost = g_cost(node, neighbor, distances, params);
                 neighbor->h_cost = h_cost(neighbor, goalNode, distances);
@@ -129,7 +129,7 @@ void expand_node(Node *node, Node *goalNode, const ObstacleDistanceGrid &distanc
                 openList.push(neighbor);
                 searchedList.push_back(neighbor);
             }
-            else if (neighbor->g_cost > g_cost(node, neighbor, distances, params))
+            else if(neighbor->g_cost > g_cost(node, neighbor, distances, params))
             {
                 neighbor->g_cost = g_cost(node, neighbor, distances, params);
                 neighbor->parent = node;
@@ -138,6 +138,9 @@ void expand_node(Node *node, Node *goalNode, const ObstacleDistanceGrid &distanc
         }
     }
 }
+
+
+
 
 std::vector<Node *> extract_node_path(Node *goal_node, Node *start_node)
 {
@@ -154,6 +157,54 @@ std::vector<Node *> extract_node_path(Node *goal_node, Node *start_node)
     std::reverse(path.begin(), path.end());
     return path;
 }
+
+
+std::vector<Node*> prune_node_path(std::vector<Node*> nodePath){
+    if(nodePath.size() < 3) return nodePath;
+
+    std::vector<Node*> newPath;
+    std::vector<Node*> finalPath;
+    newPath.push_back(nodePath[0]);
+
+    Node* prevNode = NULL;
+    Node* currNode = NULL;
+    Node* nextNode = NULL;
+    int prev_dx, prev_dy, next_dx, next_dy, dx, dy;
+    for(int i=1; i<nodePath.size()-1; i++){
+        //dont add node if direction doesnt change
+        prevNode = nodePath[i-1];
+        currNode = nodePath[i];
+        nextNode = nodePath[i+1];
+
+        prev_dx = currNode->cell.x - prevNode->cell.x;
+        prev_dy = currNode->cell.y - prevNode->cell.y;
+        next_dx = nextNode->cell.x - currNode->cell.x;
+        next_dy = nextNode->cell.y - currNode->cell.y;
+
+        // double norm = std::sqrt((double)prev_dx*prev_dx + (double)prev_dy*prev_dy);
+
+        if(prev_dx != next_dx || prev_dy != next_dy){
+            newPath.push_back(currNode);
+        }
+    }
+
+    newPath.push_back(nodePath.back());
+    finalPath.push_back(newPath[0]);
+    for(int i=1; i<newPath.size()-1; i++)
+    {
+        dx = newPath[i]->cell.x - newPath[i-1]->cell.x;
+        dy = newPath[i]->cell.y - newPath[i-1]->cell.y;
+
+        double norm = std::sqrt((double)dx*dx + (double)dy*dy);
+        if(norm > 2)
+        {
+            finalPath.push_back(newPath[i]);
+        }
+    }
+    finalPath.push_back(newPath.back());
+    return finalPath;
+}
+
 
 // To prune the path for the waypoint follower
 std::vector<mbot_lcm_msgs::pose_xyt_t> extract_pose_path(std::vector<Node *> nodes, const ObstacleDistanceGrid &distances)
