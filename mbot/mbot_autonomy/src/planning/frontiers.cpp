@@ -250,31 +250,12 @@ Point<double> find_valid_goal_search(const frontier_t &frontier,
                 int x = currentNode->cell.x + dx[i];
                 int y = currentNode->cell.y + dy[i];
                 Node *neighbor = new Node(x, y);
-                // std::cout << "verify neighbor"<<neighbor->cell.x <<" "<< neighbor->cell.y << std::endl;
-                // if(!(std::find(searchedList.begin(), searchedList.end(), neighbor)==searchedList.end()))
-                // {
-                //     // std::cout << "current neighbor in searched list" << std::endl;
-                //     neighbor = get_from_list(neighbor, searchedList);
-                // }
-                // std::cout << "len of closed list" << closedList.size() << std::endl;
+                
+                
                 auto it = std::find(closedList.begin(), closedList.end(), neighbor);
                 if (it == closedList.end() && is_cell_free(neighbor->cell, map) && map.isCellInGrid(neighbor->cell.x, neighbor->cell.y))
-                {
-
-                    // if(std::find(searchedList.begin(), searchedList.end(), neighbor)==searchedList.end())
-                    // {
-                    // std::cout << "a new neighbor cell" << std::endl;
-                    // neighbor->g_cost = g_cost(currentNode, neighbor, distances, planner.searchparams());
+                {                    
                     openList.push(neighbor);
-                    // searchedList.push_back(neighbor);
-                    // }
-                    // else if(neighbor->g_cost > g_cost(currentNode, neighbor, distances, planner.searchparams()))
-                    // {
-
-                    //     neighbor->g_cost = g_cost(currentNode, neighbor, distances, planner.searchparams());
-
-                    //     openList.push(neighbor);
-                    // }
                 }
             }
         }
