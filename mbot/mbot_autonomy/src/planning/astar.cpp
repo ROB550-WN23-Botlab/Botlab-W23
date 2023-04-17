@@ -129,6 +129,8 @@ void expand_node(Node* node, Node* goalNode, const ObstacleDistanceGrid& distanc
                 openList.push(neighbor);
                 searchedList.push_back(neighbor);
             }
+
+            // neighbor has been reached before but current path is better
             else if(neighbor->g_cost > g_cost(node, neighbor, distances, params))
             {
                 neighbor->g_cost = g_cost(node, neighbor, distances, params);
