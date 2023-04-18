@@ -235,7 +235,7 @@ Point<double> find_valid_goal_search(const frontier_t &frontier,
         Node *currentNode = openList.pop();
         int cur_x = currentNode->cell.x;
         int cur_y = currentNode->cell.y;
-        
+
         count++;
         if (is_cell_free(currentNode->cell, map) && distances(cur_x, cur_y) > planner.searchparams().minDistanceToObstacle)
         {
@@ -251,11 +251,10 @@ Point<double> find_valid_goal_search(const frontier_t &frontier,
                 int x = currentNode->cell.x + dx[i];
                 int y = currentNode->cell.y + dy[i];
                 Node *neighbor = new Node(x, y);
-                
-                
+
                 auto it = std::find(closedList.begin(), closedList.end(), neighbor);
                 if (it == closedList.end() && is_cell_free(neighbor->cell, map) && map.isCellInGrid(neighbor->cell.x, neighbor->cell.y))
-                {                    
+                {
                     openList.push(neighbor);
                 }
             }
@@ -383,20 +382,94 @@ Point<double> find_frontier_centroid(const frontier_t &frontier)
 std::vector<Point<int>> find_empty_cell(const OccupancyGrid &map)
 {
     std::vector<Point<int>> cell_list;
-    for(int i = 0; i<map.widthInCells(); i++)
+    for (int i = 0; i < map.widthInCells(); i++)
     {
-        for(int j = 0; i<map.heightInCells(); j++)
+        for (int j = 0; i < map.heightInCells(); j++)
         {
-            if(map.logOdds(i,j) == 127)
+            if (map.logOdds(i, j) == 127)
             {
-                cell_list.push_back(Point<int>(i,j));
+                cell_list.push_back(Point<int>(i, j));
             }
         }
     }
     return cell_list;
 }
 
-bool is_reachable(Point<int> cell, ObstacleDistanceGrid distances)
+bool has_no_obstacle_between(cell_t start_cell,
+                             cell_t end_cell,
+                             const OccupancyGrid &map)
 {
+    int y0 = start_cell.y;
+    int x0 = start_cell.x;
+    int x1 = end_cell.x;
+    int y1 = end_cell.y;
 
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx - dy;
+    int x = x0;
+    int y = y0;
+
+    while (x != x1 || y != y1)
+    {
+        if(map.logOdds(x,y)>40)
+        {
+            return false;
+        }
+        int e2 = 2 * err;
+        if (e2 >= -dy)
+        {
+            err -= dy;
+            x += sx;
+        }
+        if(e2<=dx)
+        {
+            err += dx;
+            y += sy;
+        }
+    }
+
+    return true;
+}
+
+bool is_reachable(cell_t currentCell,
+                  cell_t targetCell,
+                  const ObstacleDistanceGrid &distances,
+                  const SearchParams &params)
+{
+    cell_t goalCell = currentCell;
+    ////////////////// TODO: Implement your A* search here //////////////////////////
+    cell_t startCell = targetCell;
+
+    Node *goalNode = new Node(goalCell.x, goalCell.y);
+    Node *startNode = new Node(startCell.x, startCell.y);
+
+    PriorityQueue openList;
+    std::vector<Node *> closedList;
+    std::vector<Node *> searchedList;
+
+    startNode->g_cost = 0;
+    startNode->h_cost = h_cost(startNode, goalNode, distances);
+
+    openList.push(startNode);
+
+    bool found_path = false;
+    while (!openList.empty() && !found_path)
+    {
+
+        Node *currentNode = openList.pop();
+        if (!(*currentNode == *goalNode))
+        {
+            closedList.push_back(currentNode);
+            expand_node(currentNode, goalNode, distances, params, openList, closedList, searchedList);
+        }
+        else
+        {
+            goalNode = currentNode;
+            found_path = true;
+        }
+    }
+    return found_path;
 }
