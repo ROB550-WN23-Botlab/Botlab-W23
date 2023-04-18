@@ -231,7 +231,9 @@ std::vector<mbot_lcm_msgs::pose_xyt_t> extract_pose_path(std::vector<Node *> nod
         {
             if (count == N - 1)
             {
-                currPose.theta = 0;
+                // currPose.theta = 0;
+                mbot_lcm_msgs::pose_xyt_t prevPose = posePath.back();
+                currPose.theta = atan2(currPose.y - prevPose.y, currPose.x - prevPose.x);
             }
             else
             {

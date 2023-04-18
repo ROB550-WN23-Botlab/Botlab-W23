@@ -151,6 +151,8 @@ public:
     */
     ObstacleDistanceGrid obstacleDistances(void) const { return distances_; }
 
+    SearchParams searchparams(void) const {return searchParams_;}
+
 private:
     
     ObstacleDistanceGrid distances_;

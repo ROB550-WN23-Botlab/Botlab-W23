@@ -7,7 +7,7 @@
 #include <algorithm>
 
 ActionModel::ActionModel(void)
-    : k1_(0.02f), k2_(0.001f), min_dist_(0.0025), min_theta_(0.02), initialized_(false)
+    : k1_(0.02f), k2_(0.001f), min_dist_(0.0025), min_theta_(0.01), initialized_(false)
 {
     //////////////// TODO: Handle any initialization for your ActionModel /////////////////////////
     std::random_device rd;
@@ -44,13 +44,27 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t &odometry)
 
     
 
+    
+
     dx_ = odometry.x - previousPose_.x;
     dy_ = odometry.y - previousPose_.y;
     dtheta_ = odometry.theta - previousPose_.theta;
 
-    delta_angle1_ = 0;
-    delta_s_ = 0;
-    delta_angle2_ = 0;
+    // if(abs(dx_) < min_dist_)
+    // {
+    //     dx_ = 0;
+    // }
+    // if(abs(dy_) < min_dist_)
+    // {
+    //     dy_ = 0;
+    // }
+    
+    if(dtheta_ !=0 && abs(dtheta_) < 0.01*(0.00174533))//0.00174533 = pi/180
+    {
+        dtheta_ = 0;
+        printf("\n<action_model.cpp>: theta under threshold, ignore!\n");
+    }
+
     
     stdOfAngle1_ = 0;
     stdOfTrans1_ = 0;
@@ -60,12 +74,19 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t &odometry)
     if(dx_!=0 || dy_!=0 || dtheta_ !=0)
     {
         moved = true;
+
         delta_angle1_ = angle_diff(atan2(dy_,dx_) , previousPose_.theta); // angle of rotation 1  // alpha
         delta_s_ = sqrt(dx_ * dx_ + dy_ * dy_);   // distance of trans 1
         delta_angle2_ = angle_diff(dtheta_ , delta_angle1_);               // angle of rotation 2  //delta_theta - alpha
+    
         stdOfAngle1_ = k1_ * delta_angle1_;
         stdOfTrans1_ = k2_ * delta_s_;
         stdOfAngle2_ = k1_ * delta_angle2_;
+    }
+
+    else
+    {
+        printf("\n<action_model.cpp>: odometry did not change!\n");
     }
 
 
@@ -76,10 +97,10 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t &odometry)
     // printf("\t(rot1,trans1,rot2) mean:(%.3f,%.3f,%.3f),std:(%.5f,%.5f,%.5f)\n",delta_angle1_,delta_s_,delta_angle2_,stdOfAngle1_,stdOfTrans1_,stdOfAngle2_);
 
     
+    
+
     utime_ = odometry.utime;
     previousPose_ = odometry;
-
-   
     return moved;
 
 }
