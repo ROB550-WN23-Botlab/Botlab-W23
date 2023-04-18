@@ -235,6 +235,7 @@ Point<double> find_valid_goal_search(const frontier_t &frontier,
         Node *currentNode = openList.pop();
         int cur_x = currentNode->cell.x;
         int cur_y = currentNode->cell.y;
+        
         count++;
         if (is_cell_free(currentNode->cell, map) && distances(cur_x, cur_y) > planner.searchparams().minDistanceToObstacle)
         {
@@ -377,4 +378,25 @@ Point<double> find_frontier_centroid(const frontier_t &frontier)
     printf("Mid point of frontier: (%f,%f)\n", mid_point.x, mid_point.y);
 
     return mid_point;
+}
+
+std::vector<Point<int>> find_empty_cell(const OccupancyGrid &map)
+{
+    std::vector<Point<int>> cell_list;
+    for(int i = 0; i<map.widthInCells(); i++)
+    {
+        for(int j = 0; i<map.heightInCells(); j++)
+        {
+            if(map.logOdds(i,j) == 127)
+            {
+                cell_list.push_back(Point<int>(i,j));
+            }
+        }
+    }
+    return cell_list;
+}
+
+bool is_reachable(Point<int> cell, ObstacleDistanceGrid distances)
+{
+
 }
