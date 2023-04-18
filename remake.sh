@@ -1,4 +1,5 @@
-cd /home/pi/botlabw23sha/botlab-w23/build
+#!/bin/sh
+cd /home/pi/botlab-w23/build
 cmake ..
 make
 

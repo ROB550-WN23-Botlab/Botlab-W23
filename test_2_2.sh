@@ -5,6 +5,6 @@ echo "Running only action mode - To change, edit t3.sh file"
 
 gnome-terminal -- ./t3.sh
 sleep 5s 
-gnome-terminal -- ./t1.sh
+gnome-terminal -- ./bg.sh
 sleep 5s
 gnome-terminal -- ./t2.sh
