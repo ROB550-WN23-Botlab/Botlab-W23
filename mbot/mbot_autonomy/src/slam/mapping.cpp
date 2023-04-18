@@ -76,7 +76,11 @@ void Mapping::scoreEndpoint(const adjusted_ray_t &ray, OccupancyGrid &map, std::
         Point<int> endCell = cells_touched[cells_touched.size()-1];
         if(map.isCellInGrid(endCell.x,endCell.y))
         {
-            if(map.logOdds(endCell.x,endCell.y) + kHitOdds_ <127)
+            if(map.logOdds(endCell.x,endCell.y) == 127 || map.logOdds(endCell.x,endCell.y) == -127)
+            {
+                return;
+            }
+            else if(map.logOdds(endCell.x,endCell.y) + kHitOdds_ <127)
             {
                 map.setLogOdds(endCell.x,
                                endCell.y,
@@ -99,6 +103,11 @@ void Mapping::scoreRay(const adjusted_ray_t &ray, OccupancyGrid &map, std::vecto
 
         if(map.isCellInGrid(emptyCell.x,emptyCell.y))
         {
+            if(map.logOdds(emptyCell.x,emptyCell.y) == 127 || map.logOdds(emptyCell.x,emptyCell.y) == -127)
+            {
+                continue;
+            }
+            
             if(map.logOdds(emptyCell.x,emptyCell.y) - kMissOdds_ > -127)
             {
                 map.setLogOdds(emptyCell.x,

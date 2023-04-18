@@ -7,7 +7,7 @@
 #include <algorithm>
 
 ActionModel::ActionModel(void)
-    : k1_(0.02f), k2_(0.001f), min_dist_(0.0025), min_theta_(0.01), initialized_(false)
+    : k1_(0.02f), k2_(0.0015f), min_dist_(0.0025), min_theta_(0.01), initialized_(false)
 {
     //////////////// TODO: Handle any initialization for your ActionModel /////////////////////////
     std::random_device rd;
@@ -59,11 +59,11 @@ bool ActionModel::updateAction(const mbot_lcm_msgs::pose_xyt_t &odometry)
     //     dy_ = 0;
     // }
     
-    if(dtheta_ !=0 && abs(dtheta_) < 0.01*(0.00174533))//0.00174533 = pi/180
-    {
-        dtheta_ = 0;
-        printf("\n<action_model.cpp>: theta under threshold, ignore!\n");
-    }
+    // if(dtheta_ !=0 && abs(dtheta_) < 0.01*(0.00174533))//0.00174533 = pi/180
+    // {
+    //     dtheta_ = 0;
+    //     printf("\n<action_model.cpp>: theta under threshold, ignore!\n");
+    // }
 
     
     stdOfAngle1_ = 0;
