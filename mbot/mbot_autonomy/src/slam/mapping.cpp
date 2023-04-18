@@ -15,6 +15,7 @@ void Mapping::updateMap(const mbot_lcm_msgs::lidar_t &scan,
                         OccupancyGrid &map)
 {
     // printf("in Mapping::updateMap \n");
+    // printf("map size:(%d,%d)\n",map.widthInCells(),map.heightInCells());
 
     //////////////// TODO: Implement your occupancy grid algorithm here ///////////////////////
     if (!initialized_)

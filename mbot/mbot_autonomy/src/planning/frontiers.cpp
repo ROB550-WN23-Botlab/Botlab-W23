@@ -8,6 +8,7 @@
 #include <queue>
 #include <set>
 #include <cassert>
+#include <planning/reachable_map.hpp>
 
 
 
@@ -423,3 +424,133 @@ f_Node* f_get_from_list(f_Node* node, std::vector<f_Node*> list)
     return NULL;
     
 }
+
+bool has_no_obstacle_between(Point<double> start,Point<double> end, const OccupancyGrid& map)
+{
+    // bresham
+    
+}
+
+frontier_processing_t plan_path_to_frontier_ytb(const std::vector<frontier_t>& frontiers, 
+                                            const mbot_lcm_msgs::pose_xyt_t& robotPose,
+                                            const OccupancyGrid& map,
+                                            const MotionPlanner& planner)
+{
+    ///////////// TODO: Implement your strategy to select the next frontier to explore here //////////////////
+    /*
+    * NOTES:
+    *   - If there's multiple frontiers, you'll need to decide which to drive to.
+    *   - A frontier is a collection of cells, you'll need to decide which one to attempt to drive to.
+    *   - The cells along the frontier might not be in the configuration space of the robot, so you won't necessarily
+    *       be able to drive straight to a frontier cell, but will need to drive somewhere close.
+    */
+
+    // update reachable_map
+    std::vector<Point<int>> emptyCellList;
+
+    for(int i = 0; i< map.widthInCells(); i++)
+    {
+        for(int j = 0; j< map.heightInCells(); j++)
+        {
+            if(map.logOdds(i,j)==-127)
+            {
+                emptyCellList.push_back(Point<int>(i,j));
+            }
+            if(map.logOdds(i,j)==127)
+            {
+                reachable_map[i][j] = CELL_IS_NOT_REACHABLE;
+            }
+        }
+    }
+
+    for(Point<int> cell : emptyCellList)
+    {
+        if(reachable_map[cell.x][cell.y] == CELL_UNKNOWN)
+        {
+            mbot_lcm_msgs::pose_xyt_t goalPose;
+            goalPose.x = grid_position_to_global_position(cell,map).x;
+            goalPose.y = grid_position_to_global_position(cell,map).y;
+
+
+            mbot_lcm_msgs::robot_path_t path = planner.planPath(robotPose,goalPose);
+            
+            if(path.path_length>1)
+            // printf("\tcell(%d,%d) is reachable\n",cell.x,cell.y);
+            {
+                reachable_map[cell.x][cell.y] = CELL_IS_REACHABLE;
+            }
+        }
+    }
+
+    std::vector<Point<int>> reachableCellList;
+
+    for(int i = 0; i< map.widthInCells(); i++)
+    {
+        for(int j = 0; j< map.heightInCells(); j++)
+        {
+            if(reachable_map[i][j] == CELL_IS_REACHABLE)
+            {
+                reachableCellList.push_back(Point<int>(i,j));
+            }
+        }
+    }
+
+    for(auto frontier : frontiers)
+    {
+        Point<double> frontierCenter = find_frontier_centroid(frontier);
+
+    }
+
+
+
+
+
+    // First, choose the frontier to go to
+    // Initial alg: find the nearest one
+    CompareCentroids CentrComparator(robotPose);
+    std::vector<Point<double>> goal_list;
+    bool cell_found = false;
+    for(auto frontier : frontiers){
+        auto temp = frontier;
+        std::sort(temp.cells.begin(), temp.cells.end(), CentrComparator);
+        goal_list.push_back(find_valid_goal_search(temp, map, robotPose, planner, cell_found));
+        if(cell_found == true)
+            break;
+    } // global central position
+
+    
+
+    std::sort(goal_list.begin(), goal_list.end(), CentrComparator);
+    
+
+    bool path_valid = false;
+    int i = 0;
+    int unreachable_frontiers = 0;
+    mbot_lcm_msgs::robot_path_t path;
+    while (!path_valid && i<goal_list.size())
+    {
+        Point<double> closest_point = goal_list[i];
+        mbot_lcm_msgs::pose_xyt_t goal;
+
+        goal.x = closest_point.x;
+        goal.y = closest_point.y;
+        goal.theta = 0;
+        path = planner.planPath(robotPose, goal);
+        // path.utime = utime_now();
+        // path.path.push_back(robotPose);
+        if(path.path_length <= 1)
+        {
+            i++;
+            unreachable_frontiers++;
+        }
+        else
+        {
+            path_valid = true;
+            std::cout << "current goal: " << goal.x<< " " <<goal.y<< std::endl;
+            break;
+        }
+    }
+    
+    return frontier_processing_t(path, unreachable_frontiers);
+}
+
