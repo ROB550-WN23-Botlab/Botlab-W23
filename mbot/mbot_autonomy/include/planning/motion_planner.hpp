@@ -27,7 +27,7 @@ struct MotionPlannerParams
     * walls.
     */
     MotionPlannerParams(void)
-    : robotRadius(0.2) // by default, have a little extra slop to keep the robot from getting too close to the walls
+    : robotRadius(0.15) // by default, have a little extra slop to keep the robot from getting too close to the walls
     {
     }
 };
@@ -116,6 +116,7 @@ public:
 
     bool isValidGoal(const Point<int>& goalCell) const;
     
+    SearchParams searchparams(void) const {return searchParams_;}
     /**
     * isPathSafe checks if a path that was previously planned is still safe to execute based on updated map
     * information.
@@ -150,8 +151,6 @@ public:
     * \return   ObstacleDistanceGrid currently being used by the motion planner.
     */
     ObstacleDistanceGrid obstacleDistances(void) const { return distances_; }
-
-    SearchParams searchparams(void) const {return searchParams_;}
 
 private:
     
