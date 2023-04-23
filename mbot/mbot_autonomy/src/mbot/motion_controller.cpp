@@ -164,7 +164,7 @@ class SmartManeuverController : public ManeuverControllerBase
 {
 
 private:
-    float pid[3] = {1, 3, 0.1}; // kp, ka, kb 3,40, 0
+    float pid[3] = {1, 2.91, 0.1}; // kp, ka, kb 3,40, 0, 1,2.9,0.1
     float d_end_crit = 0.02;
     float d_end_midsteps = 0.08;
     float angle_end_crit = 0.2;
@@ -434,7 +434,7 @@ int main(int argc, char **argv)
     while (true)
     {
         lcmInstance.handleTimeout(50); // update at 20Hz minimum
-        double lSpeedLimit = 0.3;
+        double lSpeedLimit = 0.6;//0.3
 
         if (controller.timesync_initialized())
         {
@@ -447,7 +447,7 @@ int main(int argc, char **argv)
                 cmd.trans_v = -lSpeedLimit;
 
             // Angular vel
-            float max_ang_vel = M_PI * 8 / 8;
+            float max_ang_vel = M_PI * 8 / 4; //8/8
             if (cmd.angular_v > max_ang_vel)
                 cmd.angular_v = max_ang_vel;
             else if (cmd.angular_v < -max_ang_vel)

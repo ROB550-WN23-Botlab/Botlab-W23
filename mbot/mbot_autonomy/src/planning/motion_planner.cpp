@@ -32,12 +32,13 @@ mbot_lcm_msgs::robot_path_t MotionPlanner::planPath(const mbot_lcm_msgs::pose_xy
         failedPath.path_length = 1;
         failedPath.path.push_back(start);
 
-        std::cout << "INFO: path rejected due to invalid goal\n";        
+        // std::cout << "INFO: path rejected due to invalid goal\n";        
 
         return failedPath;
     }
     
     // Otherwise, use A* to find the path
+    printf("valid goal! search for path\n");
     return search_for_path(start, goal, distances_, searchParams);
 }
 

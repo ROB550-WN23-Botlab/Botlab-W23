@@ -108,68 +108,7 @@ struct CompareCentroids
     mbot_lcm_msgs::pose_xyt_t robotPose;
 };
 
-frontier_processing_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers, 
-                                            const mbot_lcm_msgs::pose_xyt_t& robotPose,
-                                            const OccupancyGrid& map,
-                                            const MotionPlanner& planner)
-{
-    ///////////// TODO: Implement your strategy to select the next frontier to explore here //////////////////
-    /*
-    * NOTES:
-    *   - If there's multiple frontiers, you'll need to decide which to drive to.
-    *   - A frontier is a collection of cells, you'll need to decide which one to attempt to drive to.
-    *   - The cells along the frontier might not be in the configuration space of the robot, so you won't necessarily
-    *       be able to drive straight to a frontier cell, but will need to drive somewhere close.
-    */
 
-    // First, choose the frontier to go to
-    // Initial alg: find the nearest one
-    CompareCentroids CentrComparator(robotPose);
-    std::vector<Point<double>> goal_list;
-    bool cell_found = false;
-    for(auto frontier : frontiers){
-        auto temp = frontier;
-        std::sort(temp.cells.begin(), temp.cells.end(), CentrComparator);
-        goal_list.push_back(find_valid_goal_search(temp, map, robotPose, planner, cell_found));
-        if(cell_found == true)
-            break;
-    } // global central position
-
-    
-
-    std::sort(goal_list.begin(), goal_list.end(), CentrComparator);
-    
-
-    bool path_valid = false;
-    int i = 0;
-    int unreachable_frontiers = 0;
-    mbot_lcm_msgs::robot_path_t path;
-    while (!path_valid && i<goal_list.size())
-    {
-        Point<double> closest_point = goal_list[i];
-        mbot_lcm_msgs::pose_xyt_t goal;
-
-        goal.x = closest_point.x;
-        goal.y = closest_point.y;
-        goal.theta = 0;
-        path = planner.planPath(robotPose, goal);
-        // path.utime = utime_now();
-        // path.path.push_back(robotPose);
-        if(path.path_length <= 1)
-        {
-            i++;
-            unreachable_frontiers++;
-        }
-        else
-        {
-            path_valid = true;
-            std::cout << "current goal: " << goal.x<< " " <<goal.y<< std::endl;
-            break;
-        }
-    }
-    
-    return frontier_processing_t(path, unreachable_frontiers);
-}
 
 
 bool is_frontier_cell(int x, int y, const OccupancyGrid& map)
@@ -398,7 +337,7 @@ Point<double> find_frontier_centroid(const frontier_t& frontier)
     int index = (int)(frontier.cells.size() / 2.0);
     // printf("index: %d, size: %d\n", index, frontier.cells.size());
     mid_point = frontier.cells[index];
-    printf("Mid point of frontier: (%f,%f)\n", mid_point.x, mid_point.y);
+    // printf("Mid point of frontier: (%f,%f)\n", mid_point.x, mid_point.y);
 
     return mid_point;
 }
@@ -425,13 +364,50 @@ f_Node* f_get_from_list(f_Node* node, std::vector<f_Node*> list)
     
 }
 
-bool has_no_obstacle_between(Point<double> start,Point<double> end, const OccupancyGrid& map)
+bool has_no_obstacle_between_global_point(Point<double> start,Point<double> end, const OccupancyGrid& map)
 {
     // bresham
-    
+
+    Point<int> start_cell = global_position_to_grid_cell(start,map);
+    Point<int> end_cell = global_position_to_grid_cell(end,map);
+
+
+    int y0 = start_cell.y;
+    int x0 = start_cell.x;
+    int x1 = end_cell.x;
+    int y1 = end_cell.y;
+
+    int dx = abs(x1 - x0);
+    int dy = abs(y1 - y0);
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx - dy;
+    int x = x0;
+    int y = y0;
+
+    while (x != x1 || y != y1)
+    {
+        if(map.logOdds(x,y)>40)
+        {
+            return false;
+        }
+        int e2 = 2 * err;
+        if (e2 >= -dy)
+        {
+            err -= dy;
+            x += sx;
+        }
+        if(e2<=dx)
+        {
+            err += dx;
+            y += sy;
+        }
+    }
+    return true;
+
 }
 
-frontier_processing_t plan_path_to_frontier_ytb(const std::vector<frontier_t>& frontiers, 
+frontier_processing_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers, 
                                             const mbot_lcm_msgs::pose_xyt_t& robotPose,
                                             const OccupancyGrid& map,
                                             const MotionPlanner& planner)
@@ -495,62 +471,120 @@ frontier_processing_t plan_path_to_frontier_ytb(const std::vector<frontier_t>& f
         }
     }
 
+    printf("\treachable cell : %d / %d*%d\n",reachableCellList.size(),map.widthInCells(),map.heightInCells());
+
+    int numOfUnreachable = 0;
+
+    
+    std::vector<mbot_lcm_msgs::pose_xyt_t> targetPoseList;
     for(auto frontier : frontiers)
     {
+        bool doFindPose = false;
+
         Point<double> frontierCenter = find_frontier_centroid(frontier);
+        for(auto reachableCell: reachableCellList)
+        {
+            
+            if(has_no_obstacle_between_global_point(global_position_to_grid_cell(reachableCell,map),
+                                                    frontierCenter,map));
+            {
+                mbot_lcm_msgs::pose_xyt_t goalPose;
+                goalPose.x = global_position_to_grid_cell(reachableCell,map).x;
+                goalPose.y = global_position_to_grid_cell(reachableCell,map).y;
+                targetPoseList.push_back(goalPose);
+                doFindPose = true;
+                break;
+            }
+        }
+
+        if(!doFindPose)
+        {
+            numOfUnreachable++;
+        }        
 
     }
 
 
-
-
-
-    // First, choose the frontier to go to
-    // Initial alg: find the nearest one
-    CompareCentroids CentrComparator(robotPose);
-    std::vector<Point<double>> goal_list;
-    bool cell_found = false;
-    for(auto frontier : frontiers){
-        auto temp = frontier;
-        std::sort(temp.cells.begin(), temp.cells.end(), CentrComparator);
-        goal_list.push_back(find_valid_goal_search(temp, map, robotPose, planner, cell_found));
-        if(cell_found == true)
-            break;
-    } // global central position
-
-    
-
-    std::sort(goal_list.begin(), goal_list.end(), CentrComparator);
-    
-
-    bool path_valid = false;
-    int i = 0;
-    int unreachable_frontiers = 0;
-    mbot_lcm_msgs::robot_path_t path;
-    while (!path_valid && i<goal_list.size())
+    mbot_lcm_msgs::robot_path_t resultPath;
+    for(auto targetPose : targetPoseList)
     {
-        Point<double> closest_point = goal_list[i];
-        mbot_lcm_msgs::pose_xyt_t goal;
-
-        goal.x = closest_point.x;
-        goal.y = closest_point.y;
-        goal.theta = 0;
-        path = planner.planPath(robotPose, goal);
-        // path.utime = utime_now();
-        // path.path.push_back(robotPose);
-        if(path.path_length <= 1)
+        resultPath = planner.planPath(robotPose,targetPose);
+        if(resultPath.path_length>1)
         {
-            i++;
-            unreachable_frontiers++;
+            break;
         }
         else
         {
-            path_valid = true;
-            std::cout << "current goal: " << goal.x<< " " <<goal.y<< std::endl;
-            break;
+            printf("\tshould not happen!\n");
+            numOfUnreachable++;
         }
+
     }
-    
-    return frontier_processing_t(path, unreachable_frontiers);
+
+    return frontier_processing_t(resultPath,numOfUnreachable);
 }
+
+
+// frontier_processing_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers, 
+//                                             const mbot_lcm_msgs::pose_xyt_t& robotPose,
+//                                             const OccupancyGrid& map,
+//                                             const MotionPlanner& planner)
+// {
+//     ///////////// TODO: Implement your strategy to select the next frontier to explore here //////////////////
+//     /*
+//     * NOTES:
+//     *   - If there's multiple frontiers, you'll need to decide which to drive to.
+//     *   - A frontier is a collection of cells, you'll need to decide which one to attempt to drive to.
+//     *   - The cells along the frontier might not be in the configuration space of the robot, so you won't necessarily
+//     *       be able to drive straight to a frontier cell, but will need to drive somewhere close.
+//     */
+
+//     // First, choose the frontier to go to
+//     // Initial alg: find the nearest one
+//     CompareCentroids CentrComparator(robotPose);
+//     std::vector<Point<double>> goal_list;
+//     bool cell_found = false;
+//     for(auto frontier : frontiers){
+//         auto temp = frontier;
+//         std::sort(temp.cells.begin(), temp.cells.end(), CentrComparator);
+//         goal_list.push_back(find_valid_goal_search(temp, map, robotPose, planner, cell_found));
+//         if(cell_found == true)
+//             break;
+//     } // global central position
+
+    
+
+//     std::sort(goal_list.begin(), goal_list.end(), CentrComparator);
+    
+
+//     bool path_valid = false;
+//     int i = 0;
+//     int unreachable_frontiers = 0;
+//     mbot_lcm_msgs::robot_path_t path;
+//     while (!path_valid && i<goal_list.size())
+//     {
+//         Point<double> closest_point = goal_list[i];
+//         mbot_lcm_msgs::pose_xyt_t goal;
+
+//         goal.x = closest_point.x;
+//         goal.y = closest_point.y;
+//         goal.theta = 0;
+//         path = planner.planPath(robotPose, goal);
+//         // path.utime = utime_now();
+//         // path.path.push_back(robotPose);
+//         if(path.path_length <= 1)
+//         {
+//             i++;
+//             unreachable_frontiers++;
+//         }
+//         else
+//         {
+//             path_valid = true;
+//             std::cout << "current goal: " << goal.x<< " " <<goal.y<< std::endl;
+//             break;
+//         }
+//     }
+    
+//     return frontier_processing_t(path, unreachable_frontiers);
+// }
 

@@ -55,6 +55,11 @@ int main(int argc, char** argv)
     {
         path.path[4*n + 3] = nextPose;
     }
+    nextPose.x = -0.05f;
+    nextPose.y = 0.0f;
+    nextPose.theta = 0.0f;
+
+    path.path[15] = nextPose;
     
     // Return to original heading after completing all circuits
 //    nextPose.theta = 0.0f;

@@ -11,13 +11,15 @@
 int main(int argc, char** argv)
 {
     int numTimes = 1;
-    int numOfPoint = 9;
+    int numOfPoint = 6;
     double ll = 0.61;
     double pp = M_PI/2;
-    double pointXList[9]={ll,ll,2*ll,2*ll,3*ll,3*ll,4*ll,4*ll,5*ll};
-    double pointYList[9]={0,ll,ll,-ll,-ll,ll,ll,0,0};
-    double pointThetaList[9]={pp,0,3*pp,0,pp,0,3*pp,0,0};
-
+    // double pointXList[6]={ll,ll,2*ll,2*ll,3*ll,2*ll,2*ll,1*ll,1*ll,0};
+    // double pointYList[6]={0,-ll,-ll,0,0,0,-ll+0.1,-ll+0.1,0+0.1,0+0.1};
+    // double pointThetaList[6]={-pp,0,pp,0,-2*pp,-pp,-2*pp,pp,-2*pp,0};
+    double pointXList[6]={0.3,0.9,1.5, 0.9, 0.3, 0};
+    double pointYList[6]={0, -0.61,0,-0.61,-0.05,0};
+    double pointThetaList[6]={-0.25*M_PI, 0.25*M_PI, -0.75*M_PI, 0.75*M_PI, -1*M_PI, 0};
     
     if(argc > 1)
     {
@@ -27,7 +29,7 @@ int main(int argc, char** argv)
     std::cout << "Commanding robot to drive around 1m square " << numTimes << " times.\n";
     
     mbot_lcm_msgs::robot_path_t path;
-    path.path.resize(9);
+    path.path.resize(10);
     
     mbot_lcm_msgs::pose_xyt_t nextPose;
     
